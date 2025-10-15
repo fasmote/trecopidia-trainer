@@ -41,7 +41,8 @@ Los palos se emparejan de forma opuesta, siguiendo la secuencia:
 
 ## 📸 Captura de Pantalla del Juego
 
-![Vista previa de la aplicación](screenshot.png)
+<img width="524" height="751" alt="image" src="https://github.com/user-attachments/assets/e3f282fd-ba0d-4bca-a68c-6c3f63c1b06f" />
+
 
 ## 🛠️ Tecnologías Utilizadas
 
