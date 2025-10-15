@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Entrenador de Mazo Invisible</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --card-red: #ef4444; /* Rojo */
+            --card-black: #1f2937; /* Gris oscuro */
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0f172a; /* Azul oscuro de fondo */
+            color: #f8fafc;
+        }
+        
+        /* Estilos Base de la Carta */
+        .card {
+            width: 100px;
+            height: 140px;
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 8px;
+            font-weight: 700;
+            box-shadow: 0 10px 15px rgba(0, 0, 0, 0.3);
+        }
+        .card-red {
+            background-color: white;
+            color: var(--card-red);
+            border: 4px solid var(--card-red);
+        }
+        .card-black {
+            background-color: white;
+            color: var(--card-black);
+            border: 4px solid var(--card-black);
+        }
+        
+        /* Estilos de la Animación 3D Flip */
+        .perspective-1000 {
+            perspective: 1000px;
+            width: 100px; /* Asegura el tamaño para el contenedor de flip */
+            height: 140px;
+        }
+        .flip-card-inner {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            text-align: center;
+            transition: transform 0.6s;
+            transform-style: preserve-3d;
+        }
+        .flipped {
+            transform: rotateY(180deg);
+        }
+        .flip-card-front, .flip-card-back {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            -webkit-backface-visibility: hidden; /* Safari */
+            backface-visibility: hidden;
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 8px;
+            font-weight: 700;
+        }
+        .flip-card-back {
+            transform: rotateY(180deg);
+        }
+        .flip-card-front {
+            /* Estilo del dorso de la carta (como antes .reversed) */
+            background-color: #dc2626; 
+            color: white;
+            border: 4px solid #b91c1c;
+            justify-content: center;
+            align-items: center;
+            font-size: 0.9rem;
+            text-shadow: 0 0 5px rgba(0,0,0,0.5);
+            background-image: repeating-linear-gradient(-45deg, #a11c1c, #a11c1c 10px, #dc2626 10px, #dc2626 20px);
+        }
+        
+        /* Estilo general de los botones de selección */
+        .selection-btn {
+            padding: 8px 4px;
+            border-radius: 8px;
+            font-weight: 600;
+            transition: all 0.15s ease-in-out;
+            cursor: pointer;
+            box-shadow: inset 0 -2px 0 rgba(0, 0, 0, 0.2);
+            font-size: 0.8rem;
+        }
+        .selection-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        /* Estilos específicos para los botones de VALOR */
+        .value-btn {
+            background-color: #374151;
+            border: 2px solid #4b5563;
+            color: white;
+        }
+        .value-btn:hover:not(.selected) {
+            background-color: #4b5563;
+        }
+        .value-btn.selected {
+            background-color: #f87171;
+            border-color: #fde047;
+            box-shadow: 0 0 12px #fde047;
+            transform: scale(1.05);
+        }
+
+        /* Estilos específicos para los botones de PALO */
+        .suit-btn {
+            font-size: 1.5rem;
+            height: 60px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+        .suit-btn.black {
+            background-color: #f8fafc; /* Fondo claro */
+            border: 2px solid #1f2937; /* Borde negro */
+            color: #1f2937; /* Símbolo negro */
+        }
+        .suit-btn.red {
+            background-color: #b91c1c; /* Fondo oscuro, mejor contraste */
+            border: 2px solid #ef4444; /* Borde rojo */
+            color: white; /* Símbolo blanco */
+        }
+        .suit-btn.selected {
+            border-color: #fde047; /* Borde amarillo/dorado */
+            box-shadow: 0 0 12px #fde047;
+            transform: scale(1.05);
+        }
+        .suit-btn.black.selected {
+            background-color: #4b5563; /* Gris oscuro al seleccionar */
+            color: #f8fafc;
+        }
+        .suit-btn.red.selected {
+            background-color: #8c0a0a; /* Rojo muy oscuro al seleccionar */
+            color: white;
+        }
+
+        /* Animación de Vibración (Shake) para fallar */
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-5px); }
+            40%, 80% { transform: translateX(5px); }
+        }
+        .shake {
+            animation: shake 0.4s;
+        }
+
+        /* Estilo para el confeti */
+        .confetti-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            overflow: hidden;
+            z-index: 50;
+        }
+        @keyframes fall {
+            0% { transform: translateY(-100vh) rotate(0deg); opacity: 1; }
+            100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+        }
+        .confetti-particle {
+            position: absolute;
+            width: 8px;
+            height: 16px;
+            background-color: #f0f;
+            animation: fall 3s ease-out forwards;
+            border-radius: 2px;
+        }
+
+    </style>
+</head>
+<body class="p-4 md:p-8 min-h-screen flex items-center justify-center">
+
+    <div class="w-full max-w-lg bg-gray-800 p-6 sm:p-8 rounded-xl shadow-2xl border border-gray-700 relative">
+        <!-- Contenedor de Confeti -->
+        <div id="confetti-container" class="confetti-container"></div>
+        
+        <h1 class="text-3xl font-bold text-center mb-1 text-red-400">Entrenador Mazo Invisible</h1>
+        <p class="text-center text-gray-400 mb-6 font-semibold">TRECOPIDIA (T-C, P-D)</p>
+
+        <!-- SCOREBOARD Y TEMPORIZADOR -->
+        <div class="flex justify-between items-center mb-8 p-3 bg-gray-900 rounded-lg shadow-lg">
+            <div class="text-center">
+                <div class="text-xs text-gray-400">Puntaje</div>
+                <div id="scoreboard" class="text-2xl font-bold text-green-400">0 / 0</div>
+            </div>
+            <div class="text-center">
+                <div class="text-xs text-gray-400">Tiempo Restante</div>
+                <div id="timer" class="text-2xl font-bold text-red-500">20s</div>
+            </div>
+        </div>
+
+        <div id="game-container">
+            <!-- 1. CARTA NOMBRADA Y CARTA RESPUESTA -->
+            <div class="mb-8 p-4 bg-gray-700 rounded-lg shadow-inner">
+                <h2 class="text-xl font-semibold mb-4 text-yellow-300 text-center">1. Cartas (Nombrada vs. Respuesta)</h2>
+                <div class="flex justify-center items-center space-x-8 relative min-h-[140px]">
+                    <!-- Carta Nombrada -->
+                    <div id="nominated-card" class="card card-red text-center text-4xl hidden">
+                        <!-- El contenido de la carta va aquí -->
+                    </div>
+                    
+                    <!-- Carta de Respuesta (Feedback) -->
+                    <div id="feedback-card-container" class="perspective-1000 hidden">
+                        <div id="feedback-card" class="flip-card-inner">
+                            <div class="flip-card-front card reversed">
+                                MAZO INVISIBLE
+                            </div>
+                            <div id="feedback-card-back" class="flip-card-back card card-black">
+                                <!-- Contenido de la carta correcta se inserta aquí -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="initial-message" class="text-center text-lg text-gray-300 p-4 absolute">
+                        Presiona "Empezar Práctica" para empezar.
+                    </div>
+                </div>
+            </div>
+
+            <!-- 2. SELECCIÓN DEL MAGO (CON BOTONES) -->
+            <div id="magician-selection" class="mb-8 p-4 bg-gray-700 rounded-lg shadow-inner hidden">
+                <h2 class="text-xl font-semibold mb-4 text-blue-300 text-center">2. Selecciona la Carta Invertida</h2>
+                
+                <!-- Selector de Palo (4 botones) -->
+                <div id="suit-buttons-container" class="grid grid-cols-4 gap-2 mb-4">
+                    <!-- Botones de Palo generados por JS -->
+                </div>
+
+                <!-- Selector de Valor (13 botones) -->
+                <div id="value-buttons-container" class="grid grid-cols-7 gap-1">
+                    <!-- Botones de Valor generados por JS -->
+                </div>
+            </div>
+
+            <!-- Botones y Resultado -->
+            <div class="flex flex-col space-y-4">
+                <button id="start-button" class="w-full py-3 px-4 bg-red-600 hover:bg-red-700 text-white font-bold rounded-lg shadow-lg transition duration-150">
+                    Empezar Práctica
+                </button>
+                <button id="next-button" class="w-full py-3 px-4 bg-green-600 hover:bg-green-700 text-white font-bold rounded-lg shadow-lg transition duration-150 hidden">
+                    Probar otra vez
+                </button>
+            </div>
+
+            <div id="result-message" class="mt-6 p-4 text-center rounded-lg font-semibold min-h-[50px]">
+                <!-- Mensaje de resultado aquí -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- CONSTANTES Y CONFIGURACIÓN ---
+        const SUIT_ORDER = ['C', 'H', 'S', 'D']; // TRECOPIDIA: Tréboles, Corazones, Picas, Diamantes
+
+        // LÓGICA DE EMPAREJAMIENTO: C (Trébol) <-> H (Corazón) | S (Pica) <-> D (Diamante)
+        const SUIT_MAP = {
+            'C': { name: 'Tréboles', symbol: '♣', color: 'black', opposite: 'H' }, 
+            'H': { name: 'Corazones', symbol: '♥', color: 'red', opposite: 'C' },  
+            'S': { name: 'Picas', symbol: '♠', color: 'black', opposite: 'D' },    
+            'D': { name: 'Diamantes', symbol: '♦', color: 'red', opposite: 'S' }   
+        };
+
+        const VALUE_SYMBOLS = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
+        
+        // --- ESTADO DE LA APLICACIÓN ---
+        let currentNominatedCard = null;
+        let correctInvertedCard = null;
+        let selectedValue = null;
+        let selectedSuit = null;
+        let score = 0;
+        let totalAttempts = 0;
+        let timer = 20;
+        let timerInterval = null;
+
+        // --- ELEMENTOS DEL DOM ---
+        const nominatedCardEl = document.getElementById('nominated-card');
+        const feedbackCardContainerEl = document.getElementById('feedback-card-container');
+        const feedbackCardEl = document.getElementById('feedback-card');
+        const feedbackCardBackEl = document.getElementById('feedback-card-back');
+        const initialMessageEl = document.getElementById('initial-message');
+        const startButton = document.getElementById('start-button');
+        const nextButton = document.getElementById('next-button');
+        const resultMessageEl = document.getElementById('result-message');
+        const magicianSelectionEl = document.getElementById('magician-selection');
+        const suitButtonsContainer = document.getElementById('suit-buttons-container');
+        const valueButtonsContainer = document.getElementById('value-buttons-container');
+        const confettiContainer = document.getElementById('confetti-container');
+        const scoreboardEl = document.getElementById('scoreboard');
+        const timerEl = document.getElementById('timer');
+
+        // --- FUNCIONES DE LÓGICA ---
+        
+        /** Genera una carta aleatoria. */
+        function generateRandomCard() {
+            const value = Math.floor(Math.random() * 13) + 1; // 1 (As) a 13 (Rey)
+            const suitIndex = Math.floor(Math.random() * 4);
+            const suit = SUIT_ORDER[suitIndex];
+            return { value, suit };
+        }
+
+        /** Calcula la carta correcta (Suma a 13, T-C, P-D). */
+        function calculateCorrectInvertedCard(nominatedCard) {
+            // 1. Lógica de Valor (Suma a 13)
+            let correctValue = (nominatedCard.value === 13) ? 13 : 13 - nominatedCard.value;
+            
+            // 2. Lógica de Palo (Opuesto según la regla T-C, P-D)
+            const correctSuit = SUIT_MAP[nominatedCard.suit].opposite;
+
+            return { value: correctValue, suit: correctSuit };
+        }
+
+        /** Convierte los datos de la carta a un formato de visualización. */
+        function formatCardForDisplay(card) {
+            const valueSymbol = VALUE_SYMBOLS[card.value - 1]; // Index 0 is A (value 1)
+            const suitData = SUIT_MAP[card.suit];
+            const suitSymbol = suitData.symbol;
+            const colorClass = suitData.color === 'red' ? 'card-red' : 'card-black';
+
+            return { valueSymbol, suitSymbol, colorClass };
+        }
+
+        // --- FUNCIONES DE UI/RENDERIZACIÓN ---
+
+        /** Actualiza el marcador de aciertos. */
+        function updateScoreboard() {
+            scoreboardEl.textContent = `${score} / ${totalAttempts}`;
+        }
+        
+        /** Inicia el temporizador de 20 segundos. */
+        function startTimer() {
+            stopTimer();
+            timer = 20;
+            timerEl.textContent = `${timer}s`;
+            timerEl.classList.remove('text-red-700', 'text-gray-400');
+            timerEl.classList.add('text-red-500');
+
+            timerInterval = setInterval(() => {
+                timer--;
+                timerEl.textContent = `${timer}s`;
+
+                if (timer <= 5) {
+                    timerEl.classList.remove('text-red-500');
+                    timerEl.classList.add('text-red-700');
+                }
+
+                if (timer <= 0) {
+                    stopTimer();
+                    checkAnswer(true); // Tiempo agotado
+                }
+            }, 1000);
+        }
+
+        /** Detiene el temporizador. */
+        function stopTimer() {
+            if (timerInterval) {
+                clearInterval(timerInterval);
+                timerInterval = null;
+            }
+            timerEl.classList.remove('text-red-500', 'text-red-700');
+            timerEl.classList.add('text-gray-400');
+        }
+        
+        /** Aplica un efecto de vibración (shake). */
+        function shakeEffect() {
+            magicianSelectionEl.classList.add('shake');
+            resultMessageEl.classList.add('shake');
+            setTimeout(() => {
+                magicianSelectionEl.classList.remove('shake');
+                resultMessageEl.classList.remove('shake');
+            }, 500);
+        }
+
+        /** Genera confeti. */
+        function launchConfetti() {
+            const colors = ['#f87171', '#34d399', '#60a5fa', '#fde047', '#a78bfa'];
+            for (let i = 0; i < 50; i++) {
+                const particle = document.createElement('div');
+                particle.classList.add('confetti-particle');
+                
+                particle.style.left = `${Math.random() * 100}%`;
+                particle.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                particle.style.animationDelay = `${Math.random() * 0.5}s`;
+                particle.style.width = `${Math.random() * 5 + 4}px`;
+                particle.style.height = `${Math.random() * 10 + 8}px`;
+                
+                confettiContainer.appendChild(particle);
+            }
+            
+            setTimeout(() => {
+                confettiContainer.innerHTML = '';
+            }, 3000);
+        }
+
+        /** Renderiza el contenido de la carta volteada (el dorso). */
+        function renderFeedbackCardContent(card) {
+            const display = formatCardForDisplay(card);
+            
+            feedbackCardBackEl.innerHTML = `
+                <div class="text-left text-sm">${display.valueSymbol}${display.suitSymbol}</div>
+                <div class="text-center text-6xl">${display.suitSymbol}</div>
+                <div class="text-right self-end text-sm">${display.valueSymbol}${display.suitSymbol}</div>
+            `;
+            // Aplicar las clases de color y borde de la carta a la cara de atrás
+            feedbackCardBackEl.className = `flip-card-back card ${display.colorClass}`;
+        }
+
+        /** Renderiza la carta nombrada. */
+        function renderNominatedCard(card) {
+            const display = formatCardForDisplay(card);
+
+            nominatedCardEl.innerHTML = `
+                <div class="text-left text-sm">${display.valueSymbol}${display.suitSymbol}</div>
+                <div class="text-center text-6xl">${display.suitSymbol}</div>
+                <div class="text-right self-end text-sm">${display.valueSymbol}${display.suitSymbol}</div>
+            `;
+            nominatedCardEl.className = `card ${display.colorClass}`;
+            nominatedCardEl.classList.remove('hidden');
+        }
+
+        /** Actualiza el estado de selección de un grupo de botones. */
+        function updateSelection(type, value, buttonEl) {
+            let container;
+            if (type === 'value') {
+                selectedValue = parseInt(value);
+                container = valueButtonsContainer;
+            } else {
+                selectedSuit = value;
+                container = suitButtonsContainer;
+            }
+
+            // Si la ronda ya terminó (botón "Probar otra vez" visible), no hacer nada
+            if (!nextButton.classList.contains('hidden')) return; 
+
+            // Desactivar todos los demás botones en el contenedor
+            container.querySelectorAll('.selection-btn').forEach(btn => {
+                btn.classList.remove('selected');
+            });
+            
+            // Activar el botón seleccionado
+            buttonEl.classList.add('selected');
+
+            // Comprobación automática
+             if (selectedValue !== null && selectedSuit !== null) {
+                checkAnswer(false);
+            }
+        }
+
+        /** Inicializa los botones de valor. */
+        function initializeValueButtons() {
+            valueButtonsContainer.innerHTML = '';
+            VALUE_SYMBOLS.forEach((symbol, index) => {
+                const value = index + 1; // 1 a 13
+                const button = document.createElement('button');
+                button.classList.add('selection-btn', 'text-xl', 'value-btn');
+                button.textContent = symbol;
+                button.dataset.value = value;
+                button.addEventListener('click', (e) => updateSelection('value', value, e.target));
+                valueButtonsContainer.appendChild(button);
+            });
+        }
+
+        /** Inicializa los botones de palo. */
+        function initializeSuitButtons() {
+            suitButtonsContainer.innerHTML = '';
+            SUIT_ORDER.forEach((suit) => {
+                const suitData = SUIT_MAP[suit];
+                const button = document.createElement('button');
+                const colorClass = suitData.color;
+                
+                button.classList.add('selection-btn', 'suit-btn', colorClass);
+                button.innerHTML = `<span class="text-3xl">${suitData.symbol}</span>`;
+                button.dataset.suit = suit;
+                button.addEventListener('click', (e) => updateSelection('suit', suit, e.currentTarget));
+                suitButtonsContainer.appendChild(button);
+            });
+        }
+
+        // --- HANDLERS DE EVENTOS ---
+
+        /** Inicia una nueva ronda de práctica. */
+        function startPractice() {
+            // Limpiar estado y UI
+            resultMessageEl.textContent = '';
+            resultMessageEl.className = 'mt-6 p-4 text-center rounded-lg font-semibold min-h-[50px]';
+            selectedValue = null;
+            selectedSuit = null;
+            
+            // Quitar selecciones y re-habilitar botones
+            document.querySelectorAll('.selection-btn').forEach(btn => {
+                btn.classList.remove('selected');
+                btn.disabled = false;
+            });
+            
+            // Carta de feedback: Ponerla boca abajo
+            feedbackCardEl.classList.remove('flipped');
+            feedbackCardContainerEl.classList.remove('hidden');
+
+            // 1. Generar la carta del espectador
+            currentNominatedCard = generateRandomCard();
+
+            // 2. Calcular la respuesta correcta
+            correctInvertedCard = calculateCorrectInvertedCard(currentNominatedCard);
+            
+            // 3. Renderizar el contenido de la carta correcta (en el dorso de la carta de feedback)
+            renderFeedbackCardContent(correctInvertedCard);
+
+            // 4. Incrementar el total de intentos y actualizar score
+            totalAttempts++;
+            updateScoreboard();
+
+            // 5. Iniciar el temporizador
+            startTimer();
+
+            // 6. Renderizar y actualizar UI
+            renderNominatedCard(currentNominatedCard);
+            initialMessageEl.classList.add('hidden');
+            magicianSelectionEl.classList.remove('hidden');
+
+            startButton.classList.add('hidden');
+            nextButton.classList.add('hidden');
+        }
+
+        /** Comprueba la selección del mago o maneja el agotamiento del tiempo. */
+        function checkAnswer(isTimeout) {
+            stopTimer();
+            
+            // Deshabilitar botones de selección
+            document.querySelectorAll('.selection-btn').forEach(btn => btn.disabled = true);
+
+            const correctDisplay = formatCardForDisplay(correctInvertedCard);
+            let message;
+            let resultClass;
+            let isCorrect = false;
+
+            // Voltear la carta de feedback para revelar la respuesta
+            feedbackCardEl.classList.add('flipped');
+
+
+            if (isTimeout) {
+                message = `⏳ ¡Tiempo agotado! La respuesta era la ${correctDisplay.valueSymbol}${correctDisplay.suitSymbol}.`;
+                resultClass = 'bg-red-600 text-white';
+                shakeEffect();
+            } else {
+                // Lógica de chequeo de usuario
+                const isCorrectValue = selectedValue === correctInvertedCard.value;
+                const isCorrectSuit = selectedSuit === correctInvertedCard.suit;
+                isCorrect = isCorrectValue && isCorrectSuit;
+
+                if (isCorrect) {
+                    score++; // Incrementar score
+                    message = `¡🎉 Correcto! La carta volteada es la ${correctDisplay.valueSymbol}${correctDisplay.suitSymbol}. ¡Dominado!`;
+                    resultClass = 'bg-green-600 text-white';
+                    launchConfetti();
+                } else {
+                    message = `❌ Incorrecto. La carta correcta es la ${correctDisplay.valueSymbol}${correctDisplay.suitSymbol}.`;
+                    
+                    // Explicación de los errores
+                    if (!isCorrectValue && !isCorrectSuit) {
+                        message += ' (Fallo en Valor y Palo)';
+                    } else if (!isCorrectValue) {
+                        message += ' (Fallo en Valor: Deben sumar 13).';
+                    } else if (!isCorrectSuit) {
+                        message += ' (Fallo en Palo: T-C y P-D).';
+                    }
+
+                    resultClass = 'bg-red-600 text-white';
+                    shakeEffect();
+                }
+            }
+
+            resultMessageEl.textContent = message;
+            resultMessageEl.className = `mt-6 p-4 text-center rounded-lg font-bold ${resultClass}`;
+
+            // Actualizar Scoreboard
+            updateScoreboard();
+
+            if (isCorrect) {
+                // Si es correcto, espera 2 segundos y comienza la siguiente prueba automáticamente
+                setTimeout(startPractice, 2000);
+            } else {
+                // Si es incorrecto, muestra el botón para que el usuario continúe
+                nextButton.classList.remove('hidden');
+            }
+        }
+
+        // --- INICIALIZACIÓN ---
+        document.addEventListener('DOMContentLoaded', () => {
+            initializeValueButtons();
+            initializeSuitButtons();
+            updateScoreboard();
+
+            startButton.addEventListener('click', startPractice);
+            nextButton.addEventListener('click', startPractice);
+        });
+
+    </script>
+</body>
+</html>
