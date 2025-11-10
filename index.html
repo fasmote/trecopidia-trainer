@@ -186,41 +186,68 @@
         /* Estilos para el modo abanico */
         .fan-container {
             position: relative;
-            height: 200px;
+            height: 280px;
             display: flex;
             justify-content: center;
             align-items: center;
+            margin-top: 20px;
         }
 
         .fan-card {
             position: absolute;
-            width: 60px;
-            height: 90px;
-            border-radius: 8px;
+            width: 80px;
+            height: 120px;
+            border-radius: 10px;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
-            padding: 4px;
+            padding: 6px;
             font-weight: 700;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.4);
             cursor: pointer;
             transition: all 0.2s ease-in-out;
             transform-origin: bottom center;
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
         }
 
-        .fan-card:hover {
-            transform: translateY(-15px) scale(1.1) !important;
-            z-index: 10 !important;
-            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.5);
+        .fan-card:hover,
+        .fan-card:active {
+            transform: translateY(-20px) scale(1.15) !important;
+            z-index: 100 !important;
+            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.6);
         }
 
         .fan-card .value-small {
-            font-size: 0.6rem;
+            font-size: 0.85rem;
+            line-height: 1;
+            font-weight: 800;
         }
 
         .fan-card .suit-large {
-            font-size: 2rem;
+            font-size: 2.5rem;
             text-align: center;
+            line-height: 1;
+        }
+
+        /* Mejoras para móvil */
+        @media (max-width: 640px) {
+            .fan-container {
+                height: 260px;
+            }
+
+            .fan-card {
+                width: 70px;
+                height: 105px;
+            }
+
+            .fan-card .suit-large {
+                font-size: 2.2rem;
+            }
+
+            .fan-card .value-small {
+                font-size: 0.75rem;
+            }
         }
 
     </style>
@@ -673,9 +700,10 @@
             }
 
             const totalCards = cards.length;
-            const angleSpread = 40; // Ángulo total del abanico en grados
+            const angleSpread = 60; // Ángulo total del abanico ampliado
             const angleStep = angleSpread / (totalCards - 1);
             const startAngle = -angleSpread / 2;
+            const radius = 120; // Radio del abanico aumentado
 
             cards.forEach((card, index) => {
                 const display = formatCardForDisplay(card);
@@ -688,16 +716,21 @@
                     <div class="value-small text-right">${display.valueSymbol}${display.suitSymbol}</div>
                 `;
 
-                // Calcular posición y rotación
+                // Calcular posición y rotación con mayor espaciado
                 const angle = startAngle + (index * angleStep);
-                const translateX = Math.sin(angle * Math.PI / 180) * 80;
-                const translateY = Math.cos(angle * Math.PI / 180) * 20;
+                const translateX = Math.sin(angle * Math.PI / 180) * radius;
+                const translateY = Math.cos(angle * Math.PI / 180) * 30;
 
                 cardEl.style.transform = `translateX(${translateX}px) translateY(${translateY}px) rotate(${angle}deg)`;
                 cardEl.style.zIndex = index;
 
-                // Agregar evento de clic
-                cardEl.addEventListener('click', () => handleFanCardClick(card));
+                // Agregar eventos de clic y touch
+                const handleCardSelect = () => handleFanCardClick(card);
+                cardEl.addEventListener('click', handleCardSelect);
+                cardEl.addEventListener('touchend', (e) => {
+                    e.preventDefault();
+                    handleCardSelect();
+                });
 
                 fanContainerEl.appendChild(cardEl);
             });
