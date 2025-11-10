@@ -116,6 +116,29 @@
             transform: scale(1.05);
         }
 
+        .value-btn.wrong {
+            background-color: #991b1b;
+            border-color: #dc2626;
+            position: relative;
+        }
+
+        .value-btn.wrong::after {
+            content: '✗';
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            font-size: 1.2rem;
+            color: #dc2626;
+            font-weight: 900;
+            background: white;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
         /* Estilos específicos para los botones de PALO */
         .suit-btn {
             font-size: 1.5rem;
@@ -147,6 +170,28 @@
         .suit-btn.red.selected {
             background-color: #8c0a0a; /* Rojo muy oscuro al seleccionar */
             color: white;
+        }
+
+        .suit-btn.wrong {
+            position: relative;
+            opacity: 0.6;
+        }
+
+        .suit-btn.wrong::after {
+            content: '✗';
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            font-size: 1.5rem;
+            color: #dc2626;
+            font-weight: 900;
+            background: white;
+            border-radius: 50%;
+            width: 25px;
+            height: 25px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
         /* Animación de Vibración (Shake) para fallar */
@@ -189,7 +234,8 @@
             height: 320px;
             display: flex;
             justify-content: center;
-            align-items: center;
+            align-items: flex-end;
+            padding-bottom: 30px;
             margin-top: 20px;
         }
 
@@ -235,6 +281,30 @@
             line-height: 1;
         }
 
+        /* Carta incorrecta tachada */
+        .fan-card.wrong {
+            opacity: 0.7;
+            filter: grayscale(50%);
+        }
+
+        .fan-card.wrong::after {
+            content: '✗';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 4rem;
+            color: #dc2626;
+            font-weight: 900;
+            text-shadow: 0 0 10px rgba(220, 38, 38, 0.8);
+            animation: wrongMark 0.3s ease-out;
+        }
+
+        @keyframes wrongMark {
+            0% { transform: translate(-50%, -50%) scale(0) rotate(-180deg); }
+            100% { transform: translate(-50%, -50%) scale(1) rotate(0deg); }
+        }
+
         /* Mejoras para móvil */
         @media (max-width: 640px) {
             .fan-container {
@@ -252,6 +322,10 @@
 
             .fan-card .value-small {
                 font-size: 0.85rem;
+            }
+
+            .fan-card.wrong::after {
+                font-size: 3rem;
             }
         }
 
@@ -491,6 +565,8 @@
         let timer = 20;
         let timerInterval = null;
         let currentMode = null; // 'classic' o 'fan'
+        let isRetrying = false; // Para saber si estamos reintentando la misma carta
+        let lastWrongCard = null; // Para recordar qué carta se eligió mal
 
         // --- ELEMENTOS DEL DOM ---
         const nominatedCardEl = document.getElementById('nominated-card');
@@ -728,26 +804,32 @@
             }
 
             const totalCards = cards.length;
-            const angleSpread = 80; // Ángulo total del abanico más abierto
+            const angleSpread = 90; // Ángulo total del abanico más abierto (casi semicircular)
             const angleStep = angleSpread / (totalCards - 1);
             const startAngle = -angleSpread / 2;
-            const radius = 140; // Radio del abanico aumentado para mayor separación
+            const radius = 160; // Radio mayor para forma más circular
 
             cards.forEach((card, index) => {
                 const display = formatCardForDisplay(card);
                 const cardEl = document.createElement('div');
 
                 cardEl.classList.add('fan-card', display.colorClass);
+
+                // Marcar la carta incorrecta si es un reintento
+                if (isRetrying && lastWrongCard && card.value === lastWrongCard.value && card.suit === lastWrongCard.suit) {
+                    cardEl.classList.add('wrong');
+                }
+
                 cardEl.innerHTML = `
                     <div class="value-small">${display.valueSymbol}${display.suitSymbol}</div>
                     <div class="suit-large">${display.suitSymbol}</div>
                     <div class="value-small text-right">${display.valueSymbol}${display.suitSymbol}</div>
                 `;
 
-                // Calcular posición y rotación con mayor espaciado
+                // Calcular posición y rotación con forma semicircular
                 const angle = startAngle + (index * angleStep);
                 const translateX = Math.sin(angle * Math.PI / 180) * radius;
-                const translateY = Math.cos(angle * Math.PI / 180) * 30;
+                const translateY = -Math.cos(angle * Math.PI / 180) * radius * 0.5; // Curvatura semicircular
 
                 cardEl.style.transform = `translateX(${translateX}px) translateY(${translateY}px) rotate(${angle}deg)`;
                 cardEl.style.zIndex = index;
@@ -828,6 +910,20 @@
             document.querySelectorAll('.selection-btn').forEach(btn => {
                 btn.classList.remove('selected');
                 btn.disabled = false;
+
+                // Marcar botones incorrectos si estamos reintentando (modo clásico)
+                if (isRetrying && lastWrongCard) {
+                    // Marcar valor incorrecto
+                    if (btn.dataset.value && parseInt(btn.dataset.value) === lastWrongCard.value) {
+                        btn.classList.add('wrong');
+                    }
+                    // Marcar palo incorrecto
+                    if (btn.dataset.suit && btn.dataset.suit === lastWrongCard.suit) {
+                        btn.classList.add('wrong');
+                    }
+                } else {
+                    btn.classList.remove('wrong');
+                }
             });
 
             // Reactivar cartas del abanico
@@ -840,18 +936,21 @@
             feedbackCardEl.classList.remove('flipped');
             feedbackCardContainerEl.classList.remove('hidden');
 
-            // 1. Generar la carta del espectador
-            currentNominatedCard = generateRandomCard();
+            // Solo generar nueva carta si NO estamos reintentando
+            if (!isRetrying) {
+                // 1. Generar la carta del espectador
+                currentNominatedCard = generateRandomCard();
 
-            // 2. Calcular la respuesta correcta
-            correctInvertedCard = calculateCorrectInvertedCard(currentNominatedCard);
+                // 2. Calcular la respuesta correcta
+                correctInvertedCard = calculateCorrectInvertedCard(currentNominatedCard);
 
-            // 3. Renderizar el contenido de la carta correcta (en el dorso de la carta de feedback)
-            renderFeedbackCardContent(correctInvertedCard);
+                // 3. Renderizar el contenido de la carta correcta (en el dorso de la carta de feedback)
+                renderFeedbackCardContent(correctInvertedCard);
 
-            // 4. Incrementar el total de intentos y actualizar score
-            totalAttempts++;
-            updateScoreboard();
+                // 4. Incrementar el total de intentos y actualizar score
+                totalAttempts++;
+                updateScoreboard();
+            }
 
             // 5. Iniciar el temporizador
             startTimer();
@@ -879,7 +978,7 @@
         /** Comprueba la selección del mago o maneja el agotamiento del tiempo. */
         function checkAnswer(isTimeout) {
             stopTimer();
-            
+
             // Deshabilitar botones de selección
             document.querySelectorAll('.selection-btn').forEach(btn => btn.disabled = true);
 
@@ -888,15 +987,17 @@
             let resultClass;
             let isCorrect = false;
 
-            // Voltear la carta de feedback para revelar la respuesta
-            feedbackCardEl.classList.add('flipped');
-
-
             if (isTimeout) {
-                message = `⏳ ¡Tiempo agotado! La respuesta era la ${correctDisplay.valueSymbol}${correctDisplay.suitSymbol}.`;
+                message = `⏳ ¡Tiempo agotado! Inténtalo de nuevo.`;
                 resultClass = 'bg-red-600 text-white';
-                playIncorrectSound(); // Sonido de error
+                playIncorrectSound();
                 shakeEffect();
+
+                // Guardar que estamos reintentando
+                isRetrying = true;
+                lastWrongCard = { value: selectedValue || 0, suit: selectedSuit || '' };
+
+                // NO revelar la carta correcta
             } else {
                 // Lógica de chequeo de usuario
                 const isCorrectValue = selectedValue === correctInvertedCard.value;
@@ -905,25 +1006,38 @@
 
                 if (isCorrect) {
                     score++; // Incrementar score
-                    message = `¡🎉 Correcto! La carta volteada es la ${correctDisplay.valueSymbol}${correctDisplay.suitSymbol}. ¡Dominado!`;
+                    message = `¡🎉 Correcto! ¡Dominado!`;
                     resultClass = 'bg-green-600 text-white';
-                    playCorrectSound(); // Sonido de éxito
+                    playCorrectSound();
                     launchConfetti();
+
+                    // Voltear la carta de feedback para revelar la respuesta
+                    feedbackCardEl.classList.add('flipped');
+
+                    // Resetear el estado de reintento
+                    isRetrying = false;
+                    lastWrongCard = null;
                 } else {
-                    message = `❌ Incorrecto. La carta correcta es la ${correctDisplay.valueSymbol}${correctDisplay.suitSymbol}.`;
+                    message = `❌ Incorrecto. ¡Inténtalo de nuevo!`;
 
                     // Explicación de los errores
                     if (!isCorrectValue && !isCorrectSuit) {
-                        message += ' (Fallo en Valor y Palo)';
+                        message += ' (Valor y Palo incorrectos)';
                     } else if (!isCorrectValue) {
-                        message += ' (Fallo en Valor: Deben sumar 13).';
+                        message += ' (Valor incorrecto: Deben sumar 13)';
                     } else if (!isCorrectSuit) {
-                        message += ' (Fallo en Palo: T-C y P-D).';
+                        message += ' (Palo incorrecto: T-C y P-D)';
                     }
 
                     resultClass = 'bg-red-600 text-white';
-                    playIncorrectSound(); // Sonido de error
+                    playIncorrectSound();
                     shakeEffect();
+
+                    // Guardar la carta incorrecta y activar modo reintento
+                    isRetrying = true;
+                    lastWrongCard = { value: selectedValue, suit: selectedSuit };
+
+                    // NO revelar la carta correcta
                 }
             }
 
@@ -934,11 +1048,17 @@
             updateScoreboard();
 
             if (isCorrect) {
-                // Si es correcto, espera 2 segundos y comienza la siguiente prueba automáticamente
-                setTimeout(startPractice, 2000);
+                // Si es correcto, espera 2 segundos y comienza la siguiente carta
+                setTimeout(() => {
+                    isRetrying = false;
+                    lastWrongCard = null;
+                    startPractice();
+                }, 2000);
             } else {
-                // Si es incorrecto, muestra el botón para que el usuario continúe
-                nextButton.classList.remove('hidden');
+                // Si es incorrecto, espera 4 segundos y reintenta con la misma carta
+                setTimeout(() => {
+                    startPractice();
+                }, 4000);
             }
         }
 
