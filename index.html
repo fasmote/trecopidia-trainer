@@ -73,6 +73,22 @@
         .flip-card-back {
             transform: rotateY(180deg);
         }
+
+        /* Carta de feedback incorrecta con X */
+        .flip-card-back.wrong-choice::after {
+            content: '✗';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 5rem;
+            color: #dc2626;
+            font-weight: 900;
+            text-shadow: 0 0 15px rgba(220, 38, 38, 0.9);
+            animation: wrongMark 0.3s ease-out;
+            z-index: 10;
+        }
+
         .flip-card-front {
             /* Estilo del dorso de la carta (como antes .reversed) */
             background-color: #dc2626; 
@@ -932,8 +948,9 @@
                 card.style.pointerEvents = 'auto';
             });
 
-            // Carta de feedback: Ponerla boca abajo
+            // Carta de feedback: Ponerla boca abajo y limpiar la X roja
             feedbackCardEl.classList.remove('flipped');
+            feedbackCardBackEl.classList.remove('wrong-choice');
             feedbackCardContainerEl.classList.remove('hidden');
 
             // Solo generar nueva carta si NO estamos reintentando
@@ -950,6 +967,10 @@
                 // 4. Incrementar el total de intentos y actualizar score
                 totalAttempts++;
                 updateScoreboard();
+            } else {
+                // Si estamos reintentando, re-renderizar la carta CORRECTA en el feedback
+                // (porque en el intento anterior mostramos la incorrecta con X)
+                renderFeedbackCardContent(correctInvertedCard);
             }
 
             // 5. Iniciar el temporizador
@@ -997,7 +1018,8 @@
                 isRetrying = true;
                 lastWrongCard = { value: selectedValue || 0, suit: selectedSuit || '' };
 
-                // NO revelar la carta correcta
+                // NO revelar la carta correcta en modo clásico
+                // En modo abanico no hay carta de feedback
             } else {
                 // Lógica de chequeo de usuario
                 const isCorrectValue = selectedValue === correctInvertedCard.value;
@@ -1011,7 +1033,7 @@
                     playCorrectSound();
                     launchConfetti();
 
-                    // Voltear la carta de feedback para revelar la respuesta
+                    // Voltear la carta de feedback para revelar la respuesta CORRECTA
                     feedbackCardEl.classList.add('flipped');
 
                     // Resetear el estado de reintento
@@ -1037,7 +1059,18 @@
                     isRetrying = true;
                     lastWrongCard = { value: selectedValue, suit: selectedSuit };
 
-                    // NO revelar la carta correcta
+                    // En modo CLÁSICO: mostrar la carta incorrecta elegida con X
+                    if (currentMode === 'classic') {
+                        // Renderizar la carta INCORRECTA que eligió el usuario
+                        const wrongCard = { value: selectedValue, suit: selectedSuit };
+                        renderFeedbackCardContent(wrongCard);
+
+                        // Agregar clase para mostrar la X
+                        feedbackCardBackEl.classList.add('wrong-choice');
+
+                        // Voltear para mostrar la carta incorrecta
+                        feedbackCardEl.classList.add('flipped');
+                    }
                 }
             }
 
