@@ -186,7 +186,7 @@
         /* Estilos para el modo abanico */
         .fan-container {
             position: relative;
-            height: 280px;
+            height: 320px;
             display: flex;
             justify-content: center;
             align-items: center;
@@ -195,37 +195,42 @@
 
         .fan-card {
             position: absolute;
-            width: 80px;
-            height: 120px;
+            width: 90px;
+            height: 135px;
             border-radius: 10px;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
-            padding: 6px;
+            padding: 7px;
             font-weight: 700;
             box-shadow: 0 6px 12px rgba(0, 0, 0, 0.4);
             cursor: pointer;
-            transition: all 0.2s ease-in-out;
+            transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
             transform-origin: bottom center;
             touch-action: manipulation;
             -webkit-tap-highlight-color: transparent;
         }
 
-        .fan-card:hover,
-        .fan-card:active {
-            transform: translateY(-20px) scale(1.15) !important;
+        .fan-card:hover {
+            transform: translateY(-25px) scale(1.2) !important;
             z-index: 100 !important;
-            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.6);
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.7);
+        }
+
+        .fan-card:active {
+            transform: translateY(-25px) scale(1.18) !important;
+            z-index: 100 !important;
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.7);
         }
 
         .fan-card .value-small {
-            font-size: 0.85rem;
+            font-size: 1rem;
             line-height: 1;
-            font-weight: 800;
+            font-weight: 900;
         }
 
         .fan-card .suit-large {
-            font-size: 2.5rem;
+            font-size: 2.8rem;
             text-align: center;
             line-height: 1;
         }
@@ -233,21 +238,30 @@
         /* Mejoras para móvil */
         @media (max-width: 640px) {
             .fan-container {
-                height: 260px;
+                height: 300px;
             }
 
             .fan-card {
-                width: 70px;
-                height: 105px;
+                width: 75px;
+                height: 115px;
             }
 
             .fan-card .suit-large {
-                font-size: 2.2rem;
+                font-size: 2.4rem;
             }
 
             .fan-card .value-small {
-                font-size: 0.75rem;
+                font-size: 0.85rem;
             }
+        }
+
+        /* Efecto de derrota (flash rojo) */
+        @keyframes defeatFlash {
+            0%, 100% { background-color: transparent; }
+            50% { background-color: rgba(220, 38, 38, 0.4); }
+        }
+        .defeat-flash {
+            animation: defeatFlash 0.6s ease-in-out 2;
         }
 
     </style>
@@ -434,10 +448,14 @@
             setTimeout(() => playSound(783.99, 0.2, 'sine', 0.3), 200); // Sol
         }
 
-        // Sonido de respuesta incorrecta (tono descendente)
+        // Sonido de respuesta incorrecta (dramático y trágico)
         function playIncorrectSound() {
-            playSound(400, 0.15, 'sawtooth', 0.2);
-            setTimeout(() => playSound(300, 0.2, 'sawtooth', 0.2), 150);
+            // Primer tono bajo y distorsionado
+            playSound(200, 0.2, 'sawtooth', 0.3);
+            // Segundo tono más bajo
+            setTimeout(() => playSound(150, 0.25, 'sawtooth', 0.3), 150);
+            // Tono final muy bajo (como un "pinchado")
+            setTimeout(() => playSound(80, 0.4, 'square', 0.25), 300);
         }
 
         // Sonido de tick del timer (cuando quedan 5 segundos o menos)
@@ -572,14 +590,24 @@
             timerEl.classList.add('text-gray-400');
         }
         
-        /** Aplica un efecto de vibración (shake). */
+        /** Aplica un efecto de vibración (shake) y flash de derrota. */
         function shakeEffect() {
             magicianSelectionEl.classList.add('shake');
+            fanSelectionEl.classList.add('shake');
             resultMessageEl.classList.add('shake');
+
+            // Agregar efecto de flash rojo en toda la pantalla
+            document.body.classList.add('defeat-flash');
+
             setTimeout(() => {
                 magicianSelectionEl.classList.remove('shake');
+                fanSelectionEl.classList.remove('shake');
                 resultMessageEl.classList.remove('shake');
             }, 500);
+
+            setTimeout(() => {
+                document.body.classList.remove('defeat-flash');
+            }, 1200);
         }
 
         /** Genera confeti. */
@@ -700,10 +728,10 @@
             }
 
             const totalCards = cards.length;
-            const angleSpread = 60; // Ángulo total del abanico ampliado
+            const angleSpread = 80; // Ángulo total del abanico más abierto
             const angleStep = angleSpread / (totalCards - 1);
             const startAngle = -angleSpread / 2;
-            const radius = 120; // Radio del abanico aumentado
+            const radius = 140; // Radio del abanico aumentado para mayor separación
 
             cards.forEach((card, index) => {
                 const display = formatCardForDisplay(card);
