@@ -187,7 +187,10 @@
 </head>
 <body class="p-4 md:p-8 min-h-screen flex items-center justify-center">
 
-    <div class="w-full max-w-lg bg-gray-800 p-6 sm:p-8 rounded-xl shadow-2xl border border-gray-700 relative">
+    <!-- Contenedor principal que envuelve todo -->
+    <div class="w-full max-w-lg space-y-6">
+
+    <div class="w-full bg-gray-800 p-6 sm:p-8 rounded-xl shadow-2xl border border-gray-700 relative">
         <!-- Contenedor de Confeti -->
         <div id="confetti-container" class="confetti-container"></div>
         
@@ -266,7 +269,7 @@
     </div>
 
     <!-- Sección de Resumen de Reglas -->
-    <div class="w-full max-w-lg mt-6 bg-gray-800 p-6 rounded-xl shadow-2xl border border-gray-700">
+    <div class="w-full bg-gray-800 p-6 rounded-xl shadow-2xl border border-gray-700">
         <h2 class="text-2xl font-bold text-center mb-4 text-yellow-300">📚 Reglas del Truco</h2>
         <div class="space-y-4 text-gray-200">
             <div class="bg-gray-700 p-4 rounded-lg border-l-4 border-blue-400">
@@ -294,6 +297,8 @@
             </div>
         </div>
     </div>
+
+    </div> <!-- Cierre del contenedor principal -->
 
     <script>
         // --- AUDIO CONTEXT PARA SONIDOS ---
