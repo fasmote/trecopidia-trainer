@@ -183,6 +183,46 @@
             border-radius: 2px;
         }
 
+        /* Estilos para el modo abanico */
+        .fan-container {
+            position: relative;
+            height: 200px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .fan-card {
+            position: absolute;
+            width: 60px;
+            height: 90px;
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 4px;
+            font-weight: 700;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+            cursor: pointer;
+            transition: all 0.2s ease-in-out;
+            transform-origin: bottom center;
+        }
+
+        .fan-card:hover {
+            transform: translateY(-15px) scale(1.1) !important;
+            z-index: 10 !important;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.5);
+        }
+
+        .fan-card .value-small {
+            font-size: 0.6rem;
+        }
+
+        .fan-card .suit-large {
+            font-size: 2rem;
+            text-align: center;
+        }
+
     </style>
 </head>
 <body class="p-4 md:p-8 min-h-screen flex items-center justify-center">
@@ -237,10 +277,15 @@
                 </div>
             </div>
 
-            <!-- 2. SELECCIÓN DEL MAGO (CON BOTONES) -->
+            <!-- 2A. MODO CLÁSICO: SELECCIÓN DEL MAGO (CON BOTONES) -->
             <div id="magician-selection" class="mb-8 p-4 bg-gray-700 rounded-lg shadow-inner hidden">
-                <h2 class="text-xl font-semibold mb-4 text-blue-300 text-center">2. Selecciona la Carta Invertida</h2>
-                
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-xl font-semibold text-blue-300">2. Selecciona la Carta Invertida</h2>
+                    <button id="switch-to-fan-btn" class="text-xs px-3 py-1 bg-purple-600 hover:bg-purple-700 text-white rounded transition hidden">
+                        🎴 Cambiar a Abanico
+                    </button>
+                </div>
+
                 <!-- Selector de Palo (4 botones) -->
                 <div id="suit-buttons-container" class="grid grid-cols-4 gap-2 mb-4">
                     <!-- Botones de Palo generados por JS -->
@@ -252,9 +297,41 @@
                 </div>
             </div>
 
+            <!-- 2B. MODO ABANICO: SELECCIÓN CON CARTAS -->
+            <div id="fan-selection" class="mb-8 p-4 bg-gray-700 rounded-lg shadow-inner hidden">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-xl font-semibold text-blue-300">2. Haz clic en la carta correcta</h2>
+                    <button id="switch-to-classic-btn" class="text-xs px-3 py-1 bg-purple-600 hover:bg-purple-700 text-white rounded transition hidden">
+                        🔧 Cambiar a Clásico
+                    </button>
+                </div>
+
+                <!-- Contenedor del abanico de cartas -->
+                <div id="fan-container" class="fan-container">
+                    <!-- Cartas generadas por JS -->
+                </div>
+            </div>
+
+            <!-- Selector de Modo (Pantalla inicial) -->
+            <div id="mode-selector" class="mb-8 p-4 bg-gray-700 rounded-lg shadow-inner">
+                <h2 class="text-xl font-semibold mb-4 text-purple-300 text-center">Selecciona el Modo de Entrenamiento</h2>
+                <div class="grid grid-cols-2 gap-3">
+                    <button id="start-classic-btn" class="py-4 px-4 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg shadow-lg transition duration-150">
+                        <div class="text-2xl mb-1">🔧</div>
+                        <div class="text-sm">Modo Clásico</div>
+                        <div class="text-xs text-blue-200 mt-1">Selecciona valor y palo</div>
+                    </button>
+                    <button id="start-fan-btn" class="py-4 px-4 bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-lg shadow-lg transition duration-150">
+                        <div class="text-2xl mb-1">🎴</div>
+                        <div class="text-sm">Modo Abanico</div>
+                        <div class="text-xs text-purple-200 mt-1">Haz clic en la carta</div>
+                    </button>
+                </div>
+            </div>
+
             <!-- Botones y Resultado -->
             <div class="flex flex-col space-y-4">
-                <button id="start-button" class="w-full py-3 px-4 bg-red-600 hover:bg-red-700 text-white font-bold rounded-lg shadow-lg transition duration-150">
+                <button id="start-button" class="w-full py-3 px-4 bg-red-600 hover:bg-red-700 text-white font-bold rounded-lg shadow-lg transition duration-150 hidden">
                     Empezar Práctica
                 </button>
                 <button id="next-button" class="w-full py-3 px-4 bg-green-600 hover:bg-green-700 text-white font-bold rounded-lg shadow-lg transition duration-150 hidden">
@@ -368,6 +445,7 @@
         let totalAttempts = 0;
         let timer = 20;
         let timerInterval = null;
+        let currentMode = null; // 'classic' o 'fan'
 
         // --- ELEMENTOS DEL DOM ---
         const nominatedCardEl = document.getElementById('nominated-card');
@@ -384,6 +462,15 @@
         const confettiContainer = document.getElementById('confetti-container');
         const scoreboardEl = document.getElementById('scoreboard');
         const timerEl = document.getElementById('timer');
+
+        // Nuevos elementos para modo abanico
+        const modeSelectorEl = document.getElementById('mode-selector');
+        const fanSelectionEl = document.getElementById('fan-selection');
+        const fanContainerEl = document.getElementById('fan-container');
+        const startClassicBtn = document.getElementById('start-classic-btn');
+        const startFanBtn = document.getElementById('start-fan-btn');
+        const switchToFanBtn = document.getElementById('switch-to-fan-btn');
+        const switchToClassicBtn = document.getElementById('switch-to-classic-btn');
 
         // --- FUNCIONES DE LÓGICA ---
         
@@ -564,7 +651,7 @@
                 const suitData = SUIT_MAP[suit];
                 const button = document.createElement('button');
                 const colorClass = suitData.color;
-                
+
                 button.classList.add('selection-btn', 'suit-btn', colorClass);
                 button.innerHTML = `<span class="text-3xl">${suitData.symbol}</span>`;
                 button.dataset.suit = suit;
@@ -573,7 +660,97 @@
             });
         }
 
+        /** Renderiza el abanico de 13 cartas del palo correcto. */
+        function renderFanCards() {
+            fanContainerEl.innerHTML = '';
+
+            // Generar las 13 cartas del palo correcto
+            const correctSuit = correctInvertedCard.suit;
+            const cards = [];
+
+            for (let value = 1; value <= 13; value++) {
+                cards.push({ value, suit: correctSuit });
+            }
+
+            const totalCards = cards.length;
+            const angleSpread = 40; // Ángulo total del abanico en grados
+            const angleStep = angleSpread / (totalCards - 1);
+            const startAngle = -angleSpread / 2;
+
+            cards.forEach((card, index) => {
+                const display = formatCardForDisplay(card);
+                const cardEl = document.createElement('div');
+
+                cardEl.classList.add('fan-card', display.colorClass);
+                cardEl.innerHTML = `
+                    <div class="value-small">${display.valueSymbol}${display.suitSymbol}</div>
+                    <div class="suit-large">${display.suitSymbol}</div>
+                    <div class="value-small text-right">${display.valueSymbol}${display.suitSymbol}</div>
+                `;
+
+                // Calcular posición y rotación
+                const angle = startAngle + (index * angleStep);
+                const translateX = Math.sin(angle * Math.PI / 180) * 80;
+                const translateY = Math.cos(angle * Math.PI / 180) * 20;
+
+                cardEl.style.transform = `translateX(${translateX}px) translateY(${translateY}px) rotate(${angle}deg)`;
+                cardEl.style.zIndex = index;
+
+                // Agregar evento de clic
+                cardEl.addEventListener('click', () => handleFanCardClick(card));
+
+                fanContainerEl.appendChild(cardEl);
+            });
+        }
+
+        /** Maneja el clic en una carta del abanico. */
+        function handleFanCardClick(selectedCard) {
+            // Si la ronda ya terminó, no hacer nada
+            if (!nextButton.classList.contains('hidden')) return;
+
+            // Detener el timer
+            stopTimer();
+
+            // Marcar selección
+            selectedValue = selectedCard.value;
+            selectedSuit = selectedCard.suit;
+
+            // Resaltar la carta seleccionada
+            const fanCards = fanContainerEl.querySelectorAll('.fan-card');
+            fanCards.forEach(card => {
+                card.style.pointerEvents = 'none'; // Deshabilitar clics
+            });
+
+            // Verificar respuesta
+            checkAnswer(false);
+        }
+
+        /** Cambia el modo de entrenamiento. */
+        function switchMode(newMode) {
+            currentMode = newMode;
+
+            if (currentMode === 'classic') {
+                magicianSelectionEl.classList.remove('hidden');
+                fanSelectionEl.classList.add('hidden');
+                switchToFanBtn.classList.remove('hidden');
+                switchToClassicBtn.classList.add('hidden');
+            } else if (currentMode === 'fan') {
+                magicianSelectionEl.classList.add('hidden');
+                fanSelectionEl.classList.remove('hidden');
+                switchToFanBtn.classList.add('hidden');
+                switchToClassicBtn.classList.remove('hidden');
+                renderFanCards();
+            }
+        }
+
         // --- HANDLERS DE EVENTOS ---
+
+        /** Inicia una nueva ronda de práctica con el modo especificado. */
+        function startPracticeWithMode(mode) {
+            currentMode = mode;
+            modeSelectorEl.classList.add('hidden');
+            startPractice();
+        }
 
         /** Inicia una nueva ronda de práctica. */
         function startPractice() {
@@ -590,6 +767,12 @@
             document.querySelectorAll('.selection-btn').forEach(btn => {
                 btn.classList.remove('selected');
                 btn.disabled = false;
+            });
+
+            // Reactivar cartas del abanico
+            const fanCards = fanContainerEl.querySelectorAll('.fan-card');
+            fanCards.forEach(card => {
+                card.style.pointerEvents = 'auto';
             });
 
             // Carta de feedback: Ponerla boca abajo
@@ -615,7 +798,18 @@
             // 6. Renderizar y actualizar UI
             renderNominatedCard(currentNominatedCard);
             initialMessageEl.classList.add('hidden');
-            magicianSelectionEl.classList.remove('hidden');
+
+            // Mostrar el modo correspondiente
+            if (currentMode === 'classic') {
+                magicianSelectionEl.classList.remove('hidden');
+                fanSelectionEl.classList.add('hidden');
+                switchToFanBtn.classList.remove('hidden');
+            } else if (currentMode === 'fan') {
+                magicianSelectionEl.classList.add('hidden');
+                fanSelectionEl.classList.remove('hidden');
+                switchToClassicBtn.classList.remove('hidden');
+                renderFanCards();
+            }
 
             startButton.classList.add('hidden');
             nextButton.classList.add('hidden');
@@ -692,6 +886,19 @@
             initializeValueButtons();
             initializeSuitButtons();
             updateScoreboard();
+
+            // Event listeners para selección de modo
+            startClassicBtn.addEventListener('click', () => startPracticeWithMode('classic'));
+            startFanBtn.addEventListener('click', () => startPracticeWithMode('fan'));
+
+            // Event listeners para cambio de modo durante el juego
+            switchToFanBtn.addEventListener('click', () => {
+                switchMode('fan');
+            });
+
+            switchToClassicBtn.addEventListener('click', () => {
+                switchMode('classic');
+            });
 
             startButton.addEventListener('click', startPractice);
             nextButton.addEventListener('click', startPractice);
