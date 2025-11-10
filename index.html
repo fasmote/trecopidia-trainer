@@ -265,7 +265,82 @@
         </div>
     </div>
 
+    <!-- Sección de Resumen de Reglas -->
+    <div class="w-full max-w-lg mt-6 bg-gray-800 p-6 rounded-xl shadow-2xl border border-gray-700">
+        <h2 class="text-2xl font-bold text-center mb-4 text-yellow-300">📚 Reglas del Truco</h2>
+        <div class="space-y-4 text-gray-200">
+            <div class="bg-gray-700 p-4 rounded-lg border-l-4 border-blue-400">
+                <h3 class="text-lg font-semibold text-blue-300 mb-2">🔢 Regla 1: Suma 13</h3>
+                <p class="text-sm">El valor de la carta nombrada + la carta invertida debe sumar siempre <span class="font-bold text-yellow-200">13</span></p>
+                <p class="text-xs text-gray-400 mt-2">Ejemplo: Si nombran 7♥, la carta invertida debe ser 6 (7 + 6 = 13)</p>
+            </div>
+
+            <div class="bg-gray-700 p-4 rounded-lg border-l-4 border-red-400">
+                <h3 class="text-lg font-semibold text-red-300 mb-2">🃏 Regla 2: Emparejamiento TRECOPIDIA</h3>
+                <div class="grid grid-cols-2 gap-2 mt-2">
+                    <div class="bg-gray-900 p-2 rounded text-center">
+                        <span class="text-xl">♣</span> <span class="font-bold text-yellow-200">↔</span> <span class="text-xl text-red-400">♥</span>
+                        <p class="text-xs text-gray-400 mt-1"><span class="font-bold">T</span>réboles ↔ <span class="font-bold">C</span>orazones</p>
+                    </div>
+                    <div class="bg-gray-900 p-2 rounded text-center">
+                        <span class="text-xl">♠</span> <span class="font-bold text-yellow-200">↔</span> <span class="text-xl text-red-400">♦</span>
+                        <p class="text-xs text-gray-400 mt-1"><span class="font-bold">P</span>icas ↔ <span class="font-bold">D</span>iamantes</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-gradient-to-r from-green-900 to-green-800 p-3 rounded-lg text-center">
+                <p class="text-sm font-semibold text-green-100">💡 Aplica <span class="underline">ambas reglas</span> simultáneamente para encontrar la carta correcta</p>
+            </div>
+        </div>
+    </div>
+
     <script>
+        // --- AUDIO CONTEXT PARA SONIDOS ---
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        const audioCtx = new AudioContext();
+
+        // Función para generar sonidos sintéticos
+        function playSound(frequency, duration, type = 'sine', volume = 0.3) {
+            const oscillator = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+
+            oscillator.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+
+            oscillator.frequency.value = frequency;
+            oscillator.type = type;
+
+            gainNode.gain.setValueAtTime(volume, audioCtx.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
+
+            oscillator.start(audioCtx.currentTime);
+            oscillator.stop(audioCtx.currentTime + duration);
+        }
+
+        // Sonido de respuesta correcta (tono ascendente alegre)
+        function playCorrectSound() {
+            playSound(523.25, 0.1, 'sine', 0.3); // Do
+            setTimeout(() => playSound(659.25, 0.1, 'sine', 0.3), 100); // Mi
+            setTimeout(() => playSound(783.99, 0.2, 'sine', 0.3), 200); // Sol
+        }
+
+        // Sonido de respuesta incorrecta (tono descendente)
+        function playIncorrectSound() {
+            playSound(400, 0.15, 'sawtooth', 0.2);
+            setTimeout(() => playSound(300, 0.2, 'sawtooth', 0.2), 150);
+        }
+
+        // Sonido de tick del timer (cuando quedan 5 segundos o menos)
+        function playTickSound() {
+            playSound(800, 0.05, 'square', 0.15);
+        }
+
+        // Sonido de inicio de ronda
+        function playStartSound() {
+            playSound(440, 0.1, 'sine', 0.2);
+        }
+
         // --- CONSTANTES Y CONFIGURACIÓN ---
         const SUIT_ORDER = ['C', 'H', 'S', 'D']; // TRECOPIDIA: Tréboles, Corazones, Picas, Diamantes
 
@@ -358,6 +433,7 @@
                 if (timer <= 5) {
                     timerEl.classList.remove('text-red-500');
                     timerEl.classList.add('text-red-700');
+                    playTickSound(); // Sonido de tick cuando quedan 5 segundos o menos
                 }
 
                 if (timer <= 0) {
@@ -496,18 +572,21 @@
 
         /** Inicia una nueva ronda de práctica. */
         function startPractice() {
+            // Reproducir sonido de inicio
+            playStartSound();
+
             // Limpiar estado y UI
             resultMessageEl.textContent = '';
             resultMessageEl.className = 'mt-6 p-4 text-center rounded-lg font-semibold min-h-[50px]';
             selectedValue = null;
             selectedSuit = null;
-            
+
             // Quitar selecciones y re-habilitar botones
             document.querySelectorAll('.selection-btn').forEach(btn => {
                 btn.classList.remove('selected');
                 btn.disabled = false;
             });
-            
+
             // Carta de feedback: Ponerla boca abajo
             feedbackCardEl.classList.remove('flipped');
             feedbackCardContainerEl.classList.remove('hidden');
@@ -517,7 +596,7 @@
 
             // 2. Calcular la respuesta correcta
             correctInvertedCard = calculateCorrectInvertedCard(currentNominatedCard);
-            
+
             // 3. Renderizar el contenido de la carta correcta (en el dorso de la carta de feedback)
             renderFeedbackCardContent(correctInvertedCard);
 
@@ -556,6 +635,7 @@
             if (isTimeout) {
                 message = `⏳ ¡Tiempo agotado! La respuesta era la ${correctDisplay.valueSymbol}${correctDisplay.suitSymbol}.`;
                 resultClass = 'bg-red-600 text-white';
+                playIncorrectSound(); // Sonido de error
                 shakeEffect();
             } else {
                 // Lógica de chequeo de usuario
@@ -567,10 +647,11 @@
                     score++; // Incrementar score
                     message = `¡🎉 Correcto! La carta volteada es la ${correctDisplay.valueSymbol}${correctDisplay.suitSymbol}. ¡Dominado!`;
                     resultClass = 'bg-green-600 text-white';
+                    playCorrectSound(); // Sonido de éxito
                     launchConfetti();
                 } else {
                     message = `❌ Incorrecto. La carta correcta es la ${correctDisplay.valueSymbol}${correctDisplay.suitSymbol}.`;
-                    
+
                     // Explicación de los errores
                     if (!isCorrectValue && !isCorrectSuit) {
                         message += ' (Fallo en Valor y Palo)';
@@ -581,6 +662,7 @@
                     }
 
                     resultClass = 'bg-red-600 text-white';
+                    playIncorrectSound(); // Sonido de error
                     shakeEffect();
                 }
             }
