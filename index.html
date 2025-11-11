@@ -676,7 +676,8 @@
         let timerInterval = null;
         let currentMode = null; // 'classic' o 'fan'
         let isRetrying = false; // Para saber si estamos reintentando la misma carta
-        let lastWrongCard = null; // Para recordar qué carta se eligió mal
+        let lastWrongCard = null; // Para recordar qué carta se eligió mal (modo clásico)
+        let wrongCards = []; // Array para acumular TODAS las cartas incorrectas (modo abanico)
         let consecutiveTimeoutsWithoutSelection = 0; // Contador de timeouts sin selección
         let isFirstCard = true; // Flag para saber si es la primera carta del juego
         let previousNominatedCard = null; // Para comparar si la carta cambió
@@ -1363,7 +1364,7 @@
             });
 
             // Reactivar cartas del abanico y limpiar estados
-            console.log('🔄 Limpiando cartas del abanico. isRetrying:', isRetrying, 'lastWrongCard:', lastWrongCard);
+            console.log('🔄 Limpiando cartas del abanico. isRetrying:', isRetrying, 'wrongCards:', wrongCards);
 
             const fanCards = fanContainerEl.querySelectorAll('.fan-card');
             console.log('📦 Total de cartas encontradas:', fanCards.length);
@@ -1374,10 +1375,12 @@
 
                 console.log(`  🎴 Procesando carta ${cardValue} de ${cardSuit}`);
 
-                // Si estamos reintentando y esta es la carta incorrecta, mantenerla oculta
-                if (isRetrying && lastWrongCard &&
-                    cardValue === lastWrongCard.value &&
-                    cardSuit === lastWrongCard.suit) {
+                // Verificar si esta carta está en el array de cartas incorrectas
+                const isWrongCard = wrongCards.some(wrong =>
+                    wrong.value === cardValue && wrong.suit === cardSuit
+                );
+
+                if (isRetrying && isWrongCard) {
                     // CARTA INCORRECTA: Mantener invisible y deshabilitada
                     card.style.opacity = '0';
                     card.style.pointerEvents = 'none';
@@ -1588,10 +1591,12 @@
 
                 // Guardar la carta incorrecta y activar modo reintento
                 isRetrying = true;
-                lastWrongCard = { value: selectedValue, suit: selectedSuit };
 
                 // En modo CLÁSICO: mostrar la carta incorrecta elegida con X y hacer auto-retry
                 if (currentMode === 'classic') {
+                    // En modo clásico, usar lastWrongCard (solo guarda la última)
+                    lastWrongCard = { value: selectedValue, suit: selectedSuit };
+
                     // Renderizar la carta INCORRECTA que eligió el usuario
                     const wrongCard = { value: selectedValue, suit: selectedSuit };
                     renderFeedbackCardContent(wrongCard);
@@ -1610,6 +1615,19 @@
                     }, 3000);
 
                 } else if (currentMode === 'fan') {
+                    // En modo ABANICO: ACUMULAR todas las cartas incorrectas en array
+                    const wrongCard = { value: selectedValue, suit: selectedSuit };
+
+                    // Verificar si esta carta ya está en el array (evitar duplicados)
+                    const alreadyAdded = wrongCards.some(card =>
+                        card.value === wrongCard.value && card.suit === wrongCard.suit
+                    );
+
+                    if (!alreadyAdded) {
+                        wrongCards.push(wrongCard);
+                        console.log('➕ Carta incorrecta agregada al array:', wrongCard, '| Total:', wrongCards.length);
+                    }
+
                     // En modo ABANICO: Auto-retry RÁPIDO para mantener continuidad del juego
                     // La carta incorrecta ya voló, el usuario puede seguir seleccionando inmediatamente
                     // Delay corto (1s) solo para que vea el mensaje de error
@@ -1632,6 +1650,8 @@
                 setTimeout(() => {
                     isRetrying = false;
                     lastWrongCard = null;
+                    wrongCards = []; // Limpiar array de cartas incorrectas (modo abanico)
+                    console.log('✅ Respuesta correcta - Limpiando wrongCards');
                     startPractice();
                 }, 2000);
             }
