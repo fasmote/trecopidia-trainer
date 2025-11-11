@@ -266,29 +266,50 @@
             padding: 7px;
             font-weight: 700;
             box-shadow: 0 6px 12px rgba(0, 0, 0, 0.4);
-            cursor: pointer;
+            cursor: default; /* No mostrar cursor pointer en toda la carta */
             transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
             transform-origin: bottom center;
             touch-action: manipulation;
             -webkit-tap-highlight-color: transparent;
+            pointer-events: none; /* Deshabilitar clicks en toda la carta */
         }
 
-        .fan-card:hover {
-            transform: translateY(-25px) scale(1.2) !important;
-            z-index: 100 !important;
-            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.7);
+        /* Estado agrandado de la carta - se queda EN SU LUGAR */
+        /* La transformación completa se aplica en JavaScript para mantener posición y rotación */
+        .fan-card.enlarged {
+            z-index: 200 !important; /* Por encima de todas las demás */
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.9);
         }
 
-        .fan-card:active {
-            transform: translateY(-25px) scale(1.18) !important;
-            z-index: 100 !important;
-            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.7);
+        /* Efecto hover solo en desktop - agranda EN SU LUGAR */
+        @media (hover: hover) {
+            .fan-card:hover .card-number-clickable:hover {
+                opacity: 0.8; /* Feedback visual al pasar por el número */
+            }
         }
 
         .fan-card .value-small {
             font-size: 1rem;
             line-height: 1;
             font-weight: 900;
+        }
+
+        /* Área clickeable: el número en la esquina superior izquierda */
+        /* Solo esta área responde a toques/clicks */
+        .card-number-clickable {
+            position: relative;
+            display: inline-block;
+            cursor: pointer;
+            pointer-events: auto; /* Solo esta área es clickeable */
+            padding: 4px 8px;
+            border-radius: 6px;
+            transition: background-color 0.2s, opacity 0.2s;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        /* Feedback visual al tocar el número (móvil) */
+        .card-number-clickable:active {
+            background-color: rgba(255, 255, 255, 0.2);
         }
 
         .fan-card .suit-large {
@@ -338,6 +359,10 @@
 
             .fan-card .value-small {
                 font-size: 0.85rem;
+            }
+
+            .card-number-clickable {
+                padding: 6px 10px; /* Área de toque más grande en móvil */
             }
 
             .fan-card.wrong::after {
@@ -919,7 +944,14 @@
             });
         }
 
-        /** Renderiza el abanico de 13 cartas del palo correcto. */
+        /**
+         * Renderiza el abanico de 13 cartas del palo correcto.
+         *
+         * ÁREA CLICKEABLE MEJORADA PARA MÓVIL:
+         * - Solo el número superior izquierdo es clickeable (no toda la carta)
+         * - Primer click: agranda la carta EN SU LUGAR
+         * - Segundo click: selecciona la carta
+         */
         function renderFanCards() {
             fanContainerEl.innerHTML = '';
 
@@ -942,14 +974,18 @@
                 const cardEl = document.createElement('div');
 
                 cardEl.classList.add('fan-card', display.colorClass);
+                cardEl.dataset.cardValue = card.value; // Guardar valor para identificar la carta
 
                 // Marcar la carta incorrecta si es un reintento
                 if (isRetrying && lastWrongCard && card.value === lastWrongCard.value && card.suit === lastWrongCard.suit) {
                     cardEl.classList.add('wrong');
                 }
 
+                // HTML con el número superior izquierdo como área clickeable
                 cardEl.innerHTML = `
-                    <div class="value-small">${display.valueSymbol}${display.suitSymbol}</div>
+                    <div class="value-small">
+                        <span class="card-number-clickable">${display.valueSymbol}${display.suitSymbol}</span>
+                    </div>
                     <div class="suit-large">${display.suitSymbol}</div>
                     <div class="value-small text-right">${display.valueSymbol}${display.suitSymbol}</div>
                 `;
@@ -959,37 +995,93 @@
                 const translateX = Math.sin(angle * Math.PI / 180) * radius;
                 const translateY = -Math.cos(angle * Math.PI / 180) * radius * 0.5; // Curvatura semicircular
 
+                // Guardar la posición original para mantenerla al agrandar
                 cardEl.style.transform = `translateX(${translateX}px) translateY(${translateY}px) rotate(${angle}deg)`;
+                cardEl.dataset.originalTransform = cardEl.style.transform; // Guardar para restaurar
                 cardEl.style.zIndex = index;
 
-                // Agregar eventos de clic y touch
-                const handleCardSelect = () => handleFanCardClick(card);
-                cardEl.addEventListener('click', handleCardSelect);
-                cardEl.addEventListener('touchend', (e) => {
+                // Buscar el área clickeable (el número)
+                const clickableArea = cardEl.querySelector('.card-number-clickable');
+
+                // Agregar eventos solo al número clickeable
+                const handleCardClick = (e) => {
+                    e.stopPropagation(); // Prevenir propagación
+                    handleFanCardClick(cardEl, card);
+                };
+
+                clickableArea.addEventListener('click', handleCardClick);
+                clickableArea.addEventListener('touchend', (e) => {
                     e.preventDefault();
-                    handleCardSelect();
+                    e.stopPropagation();
+                    handleCardClick(e);
                 });
 
                 fanContainerEl.appendChild(cardEl);
             });
         }
 
-        /** Maneja el clic en una carta del abanico. */
-        function handleFanCardClick(selectedCard) {
+        /**
+         * Maneja el clic en una carta del abanico con sistema de dos toques.
+         *
+         * FLUJO DE INTERACCIÓN:
+         * 1er toque: Agranda la carta EN SU LUGAR para ver mejor (añade clase 'enlarged')
+         * 2do toque: Confirma la selección y ejecuta la lógica del juego
+         *
+         * @param {HTMLElement} cardEl - El elemento DOM de la carta
+         * @param {Object} cardData - Los datos de la carta {value, suit}
+         */
+        function handleFanCardClick(cardEl, cardData) {
             // Si la ronda ya terminó, no hacer nada
             if (!nextButton.classList.contains('hidden')) return;
+
+            // PRIMER TOQUE: Agrandar la carta
+            if (!cardEl.classList.contains('enlarged')) {
+                // Quitar el agrandado de todas las demás cartas
+                const allCards = fanContainerEl.querySelectorAll('.fan-card');
+                allCards.forEach(card => {
+                    card.classList.remove('enlarged');
+                    // Restaurar transform original sin scale
+                    const originalTransform = card.dataset.originalTransform;
+                    card.style.transform = originalTransform;
+                });
+
+                // Agrandar SOLO esta carta EN SU LUGAR
+                // Extraer el transform original y agregar scale manteniendo posición y rotación
+                const originalTransform = cardEl.dataset.originalTransform;
+
+                // Detectar si es móvil (pantalla menor a 640px)
+                const isMobile = window.innerWidth <= 640;
+                const scaleAmount = isMobile ? 1.5 : 1.35; // Más grande en móvil
+
+                // Crear el nuevo transform con scale agregado
+                // Formato: translateX(...) translateY(...) rotate(...) scale(X)
+                const transformWithScale = `${originalTransform} scale(${scaleAmount})`;
+                cardEl.style.transform = transformWithScale;
+
+                // Agregar clase para aplicar z-index y sombra
+                cardEl.classList.add('enlarged');
+
+                // Aumentar z-index para que quede por encima
+                cardEl.style.zIndex = 200;
+
+                console.log('📍 Carta agrandada:', cardData.value, '- Haz clic nuevamente para seleccionar');
+                return; // Salir sin seleccionar todavía
+            }
+
+            // SEGUNDO TOQUE: Confirmar selección
+            console.log('✅ Carta seleccionada:', cardData.value);
 
             // Detener el timer
             stopTimer();
 
             // Marcar selección
-            selectedValue = selectedCard.value;
-            selectedSuit = selectedCard.suit;
+            selectedValue = cardData.value;
+            selectedSuit = cardData.suit;
 
-            // Resaltar la carta seleccionada
-            const fanCards = fanContainerEl.querySelectorAll('.fan-card');
-            fanCards.forEach(card => {
-                card.style.pointerEvents = 'none'; // Deshabilitar clics
+            // Deshabilitar todos los clics en las cartas
+            const allClickables = fanContainerEl.querySelectorAll('.card-number-clickable');
+            allClickables.forEach(clickable => {
+                clickable.style.pointerEvents = 'none';
             });
 
             // Verificar respuesta
@@ -1075,10 +1167,23 @@
                 }
             });
 
-            // Reactivar cartas del abanico
+            // Reactivar cartas del abanico y limpiar estado de agrandado
             const fanCards = fanContainerEl.querySelectorAll('.fan-card');
             fanCards.forEach(card => {
-                card.style.pointerEvents = 'auto';
+                // Remover clase 'enlarged' si la tenía
+                card.classList.remove('enlarged');
+
+                // Restaurar transform original (sin scale)
+                const originalTransform = card.dataset.originalTransform;
+                if (originalTransform) {
+                    card.style.transform = originalTransform;
+                }
+            });
+
+            // Reactivar las áreas clickeables (los números) para permitir nuevo click
+            const allClickables = fanContainerEl.querySelectorAll('.card-number-clickable');
+            allClickables.forEach(clickable => {
+                clickable.style.pointerEvents = 'auto';
             });
 
             // Carta de feedback: Ponerla boca abajo y limpiar la X roja
