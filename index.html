@@ -440,6 +440,14 @@
             z-index: 300 !important; /* Por encima de todo durante el vuelo */
         }
 
+        /* Borde amarillo para indicar inactividad (juego pausado) */
+        /* Hace que el borde sea muy visible, especialmente en móvil */
+        .game-paused {
+            border-color: #eab308 !important; /* Amarillo brillante */
+            border-width: 4px !important; /* Borde grueso */
+            box-shadow: 0 0 30px rgba(234, 179, 8, 0.6) !important; /* Resplandor amarillo */
+        }
+
     </style>
 </head>
 <body class="p-4 md:p-8 min-h-screen flex items-center justify-center">
@@ -447,7 +455,7 @@
     <!-- Contenedor principal que envuelve todo -->
     <div class="w-full max-w-lg space-y-6">
 
-    <div class="w-full bg-gray-800 p-6 sm:p-8 rounded-xl shadow-2xl border border-gray-700 relative">
+    <div id="game-container" class="w-full bg-gray-800 p-6 sm:p-8 rounded-xl shadow-2xl border border-gray-700 relative">
         <!-- Contenedor de Confeti -->
         <div id="confetti-container" class="confetti-container"></div>
         
@@ -674,6 +682,7 @@
         let previousNominatedCard = null; // Para comparar si la carta cambió
 
         // --- ELEMENTOS DEL DOM ---
+        const gameContainerEl = document.getElementById('game-container');
         const nominatedCardEl = document.getElementById('nominated-card');
         const feedbackCardContainerEl = document.getElementById('feedback-card-container');
         const feedbackCardEl = document.getElementById('feedback-card');
@@ -1130,7 +1139,9 @@
             // --- MANEJADORES DE EVENTOS ---
 
             /**
-             * Click/Tap simple: Levantar o bajar la carta
+             * Click/Tap:
+             * - Doble click rápido (< 400ms): Levanta y selecciona la carta
+             * - Click simple: Toggle lift (levanta si está abajo, baja si está arriba)
              */
             cardEl.addEventListener('click', (e) => {
                 // Si la ronda ya terminó, no hacer nada
@@ -1140,10 +1151,21 @@
                 const now = Date.now();
                 const timeSinceLastClick = now - lastClickTime;
 
-                if (timeSinceLastClick < 400 && cardEl.classList.contains('lifted')) {
-                    // DOBLE CLICK: Seleccionar carta
-                    selectCard();
-                    lastClickTime = 0; // Resetear
+                if (timeSinceLastClick < 400 && timeSinceLastClick > 0) {
+                    // DOBLE CLICK: Levantar (si no lo está) y seleccionar
+                    console.log('🖱️ DOBLE CLICK detectado');
+
+                    // Si no está levantada, levantarla primero
+                    if (!cardEl.classList.contains('lifted')) {
+                        liftCard();
+                    }
+
+                    // Seleccionar después de un pequeño delay para que se vea el lift
+                    setTimeout(() => {
+                        selectCard();
+                    }, 50);
+
+                    lastClickTime = 0; // Resetear para evitar triple click
                     return;
                 }
 
@@ -1298,6 +1320,9 @@
         function startPractice() {
             console.log('🎮 startPractice() called');
 
+            // Remover borde amarillo si el juego estaba pausado
+            gameContainerEl.classList.remove('game-paused');
+
             // Reproducir sonido de inicio
             playStartSound();
 
@@ -1340,23 +1365,38 @@
             // Reactivar cartas del abanico y limpiar estados
             const fanCards = fanContainerEl.querySelectorAll('.fan-card');
             fanCards.forEach(card => {
-                // Remover clases de estado (lifted, selected, flying)
-                card.classList.remove('lifted', 'selected', 'flying');
+                const cardValue = parseInt(card.dataset.cardValue);
+                const cardSuit = card.dataset.cardSuit;
 
-                // Restaurar posición original
-                const baseX = parseFloat(card.dataset.baseX);
-                const baseY = parseFloat(card.dataset.baseY);
-                const angle = parseFloat(card.dataset.angle);
+                // Si estamos reintentando y esta es la carta incorrecta, mantenerla oculta
+                if (isRetrying && lastWrongCard &&
+                    cardValue === lastWrongCard.value &&
+                    cardSuit === lastWrongCard.suit) {
+                    // CARTA INCORRECTA: Mantener invisible y deshabilitada
+                    card.style.opacity = '0';
+                    card.style.pointerEvents = 'none';
+                    // No restaurar posición, dejarla donde quedó (volando)
+                    console.log('🚫 Carta incorrecta permanece fuera del mazo:', cardValue);
+                } else {
+                    // CARTAS NORMALES: Restaurar todo
+                    // Remover clases de estado (lifted, selected, flying)
+                    card.classList.remove('lifted', 'selected', 'flying');
 
-                if (!isNaN(baseX) && !isNaN(baseY) && !isNaN(angle)) {
-                    card.style.transform = `translateX(${baseX}px) translateY(${baseY}px) rotate(${angle}deg)`;
+                    // Restaurar posición original
+                    const baseX = parseFloat(card.dataset.baseX);
+                    const baseY = parseFloat(card.dataset.baseY);
+                    const angle = parseFloat(card.dataset.angle);
+
+                    if (!isNaN(baseX) && !isNaN(baseY) && !isNaN(angle)) {
+                        card.style.transform = `translateX(${baseX}px) translateY(${baseY}px) rotate(${angle}deg)`;
+                    }
+
+                    // Restaurar opacidad (la animación flying pone opacity: 0)
+                    card.style.opacity = '1';
+
+                    // Reactivar interacción
+                    card.style.pointerEvents = 'auto';
                 }
-
-                // Restaurar opacidad (la animación flying pone opacity: 0)
-                card.style.opacity = '1';
-
-                // Reactivar interacción
-                card.style.pointerEvents = 'auto';
             });
 
             // Carta de feedback: Ponerla boca abajo y limpiar la X roja
@@ -1448,6 +1488,9 @@
                     message = `😴 ¿Nadie jugando? El juego se ha pausado.`;
                     resultClass = 'bg-yellow-600 text-white';
                     playIncorrectSound();
+
+                    // Agregar borde amarillo al contenedor del juego para visibilidad en móvil
+                    gameContainerEl.classList.add('game-paused');
 
                     // Mostrar botón verde para reanudar
                     nextButton.classList.remove('hidden');
