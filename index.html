@@ -266,56 +266,39 @@
             padding: 7px;
             font-weight: 700;
             box-shadow: 0 6px 12px rgba(0, 0, 0, 0.4);
-            cursor: default; /* No mostrar cursor pointer en toda la carta */
-            transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+            cursor: pointer; /* Toda la carta es interactiva */
+            transition: all 0.3s ease-out;
             transform-origin: bottom center;
-            touch-action: manipulation;
+            touch-action: none; /* Necesario para drag en móvil */
             -webkit-tap-highlight-color: transparent;
-            pointer-events: none; /* Deshabilitar clicks en toda la carta */
+            user-select: none; /* Prevenir selección de texto al arrastrar */
         }
 
-        /* Estado agrandado de la carta - se queda EN SU LUGAR */
-        /* La transformación completa se aplica en JavaScript para mantener posición y rotación */
-        .fan-card.enlarged {
-            z-index: 200 !important; /* Por encima de todas las demás */
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.9);
+        /* Estado "levantada" - la carta se sube para verla mejor */
+        .fan-card.lifted {
+            z-index: 150 !important;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.8);
         }
 
-        /* Efecto hover solo en desktop - agranda EN SU LUGAR */
-        @media (hover: hover) {
-            .fan-card:hover .card-number-clickable:hover {
-                opacity: 0.8; /* Feedback visual al pasar por el número */
-            }
+        /* Estado "seleccionada" - la carta está confirmada */
+        .fan-card.selected {
+            z-index: 200 !important;
+            box-shadow: 0 30px 60px rgba(34, 197, 94, 0.6); /* Sombra verde */
+            filter: brightness(1.2);
         }
 
         .fan-card .value-small {
             font-size: 1rem;
             line-height: 1;
             font-weight: 900;
-        }
-
-        /* Área clickeable: el número en la esquina superior izquierda */
-        /* Solo esta área responde a toques/clicks */
-        .card-number-clickable {
-            position: relative;
-            display: inline-block;
-            cursor: pointer;
-            pointer-events: auto; /* Solo esta área es clickeable */
-            padding: 4px 8px;
-            border-radius: 6px;
-            transition: background-color 0.2s, opacity 0.2s;
-            -webkit-tap-highlight-color: transparent;
-        }
-
-        /* Feedback visual al tocar el número (móvil) */
-        .card-number-clickable:active {
-            background-color: rgba(255, 255, 255, 0.2);
+            pointer-events: none; /* No interferir con eventos de la carta */
         }
 
         .fan-card .suit-large {
             font-size: 2.8rem;
             text-align: center;
             line-height: 1;
+            pointer-events: none; /* No interferir con eventos de la carta */
         }
 
         /* Carta incorrecta tachada */
@@ -359,10 +342,6 @@
 
             .fan-card .value-small {
                 font-size: 0.85rem;
-            }
-
-            .card-number-clickable {
-                padding: 6px 10px; /* Área de toque más grande en móvil */
             }
 
             .fan-card.wrong::after {
@@ -947,10 +926,11 @@
         /**
          * Renderiza el abanico de 13 cartas del palo correcto.
          *
-         * ÁREA CLICKEABLE MEJORADA PARA MÓVIL:
-         * - Solo el número superior izquierdo es clickeable (no toda la carta)
-         * - Primer click: agranda la carta EN SU LUGAR
-         * - Segundo click: selecciona la carta
+         * INTERACCIÓN MEJORADA:
+         * - Toque/click simple: Levanta la carta hacia arriba para verla mejor
+         * - Doble click: Selecciona la carta levantada
+         * - Drag hacia arriba: Selecciona si arrastra más de 40px
+         * - Drag hacia abajo: Baja la carta a su posición original
          */
         function renderFanCards() {
             fanContainerEl.innerHTML = '';
@@ -964,28 +944,27 @@
             }
 
             const totalCards = cards.length;
-            const angleSpread = 90; // Ángulo total del abanico más abierto (casi semicircular)
+            const angleSpread = 90; // Ángulo total del abanico (semicircular)
             const angleStep = angleSpread / (totalCards - 1);
             const startAngle = -angleSpread / 2;
-            const radius = 160; // Radio mayor para forma más circular
+            const radius = 160; // Radio para forma circular
 
             cards.forEach((card, index) => {
                 const display = formatCardForDisplay(card);
                 const cardEl = document.createElement('div');
 
                 cardEl.classList.add('fan-card', display.colorClass);
-                cardEl.dataset.cardValue = card.value; // Guardar valor para identificar la carta
+                cardEl.dataset.cardValue = card.value;
+                cardEl.dataset.cardSuit = card.suit;
 
                 // Marcar la carta incorrecta si es un reintento
                 if (isRetrying && lastWrongCard && card.value === lastWrongCard.value && card.suit === lastWrongCard.suit) {
                     cardEl.classList.add('wrong');
                 }
 
-                // HTML con el número superior izquierdo como área clickeable
+                // HTML simple de la carta
                 cardEl.innerHTML = `
-                    <div class="value-small">
-                        <span class="card-number-clickable">${display.valueSymbol}${display.suitSymbol}</span>
-                    </div>
+                    <div class="value-small">${display.valueSymbol}${display.suitSymbol}</div>
                     <div class="suit-large">${display.suitSymbol}</div>
                     <div class="value-small text-right">${display.valueSymbol}${display.suitSymbol}</div>
                 `;
@@ -993,99 +972,247 @@
                 // Calcular posición y rotación con forma semicircular
                 const angle = startAngle + (index * angleStep);
                 const translateX = Math.sin(angle * Math.PI / 180) * radius;
-                const translateY = -Math.cos(angle * Math.PI / 180) * radius * 0.5; // Curvatura semicircular
+                const translateY = -Math.cos(angle * Math.PI / 180) * radius * 0.5;
 
-                // Guardar la posición original para mantenerla al agrandar
+                // Aplicar transformación inicial
                 cardEl.style.transform = `translateX(${translateX}px) translateY(${translateY}px) rotate(${angle}deg)`;
-                cardEl.dataset.originalTransform = cardEl.style.transform; // Guardar para restaurar
+
+                // Guardar datos necesarios para interacciones
+                cardEl.dataset.baseX = translateX;
+                cardEl.dataset.baseY = translateY;
+                cardEl.dataset.angle = angle;
                 cardEl.style.zIndex = index;
 
-                // Buscar el área clickeable (el número)
-                const clickableArea = cardEl.querySelector('.card-number-clickable');
-
-                // Agregar eventos solo al número clickeable
-                const handleCardClick = (e) => {
-                    e.stopPropagation(); // Prevenir propagación
-                    handleFanCardClick(cardEl, card);
-                };
-
-                clickableArea.addEventListener('click', handleCardClick);
-                clickableArea.addEventListener('touchend', (e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    handleCardClick(e);
-                });
+                // Agregar manejadores de eventos para interacción
+                setupCardInteraction(cardEl, card);
 
                 fanContainerEl.appendChild(cardEl);
             });
         }
 
         /**
-         * Maneja el clic en una carta del abanico con sistema de dos toques.
+         * Configura la interacción completa de una carta del abanico.
          *
-         * FLUJO DE INTERACCIÓN:
-         * 1er toque: Agranda la carta EN SU LUGAR para ver mejor (añade clase 'enlarged')
-         * 2do toque: Confirma la selección y ejecuta la lógica del juego
+         * COMPORTAMIENTO:
+         * 1. Click simple: Levanta/baja la carta (-50px en Y para verla)
+         * 2. Doble click: Selecciona la carta (si está levantada)
+         * 3. Drag hacia arriba (>40px): Selecciona automáticamente
+         * 4. Drag hacia abajo: Baja la carta a su posición original
          *
          * @param {HTMLElement} cardEl - El elemento DOM de la carta
          * @param {Object} cardData - Los datos de la carta {value, suit}
          */
-        function handleFanCardClick(cardEl, cardData) {
-            // Si la ronda ya terminó, no hacer nada
-            if (!nextButton.classList.contains('hidden')) return;
+        function setupCardInteraction(cardEl, cardData) {
+            let dragStartY = 0;
+            let dragStartTime = 0;
+            let isDragging = false;
+            let lastClickTime = 0;
 
-            // PRIMER TOQUE: Agrandar la carta
-            if (!cardEl.classList.contains('enlarged')) {
-                // Quitar el agrandado de todas las demás cartas
-                const allCards = fanContainerEl.querySelectorAll('.fan-card');
-                allCards.forEach(card => {
-                    card.classList.remove('enlarged');
-                    // Restaurar transform original sin scale
-                    const originalTransform = card.dataset.originalTransform;
-                    card.style.transform = originalTransform;
-                });
+            // Variables para la posición de la carta
+            const baseX = parseFloat(cardEl.dataset.baseX);
+            const baseY = parseFloat(cardEl.dataset.baseY);
+            const angle = parseFloat(cardEl.dataset.angle);
+            const liftAmount = -50; // Píxeles que se levanta la carta
 
-                // Agrandar SOLO esta carta EN SU LUGAR
-                // Extraer el transform original y agregar scale manteniendo posición y rotación
-                const originalTransform = cardEl.dataset.originalTransform;
-
-                // Detectar si es móvil (pantalla menor a 640px)
-                const isMobile = window.innerWidth <= 640;
-                const scaleAmount = isMobile ? 1.5 : 1.35; // Más grande en móvil
-
-                // Crear el nuevo transform con scale agregado
-                // Formato: translateX(...) translateY(...) rotate(...) scale(X)
-                const transformWithScale = `${originalTransform} scale(${scaleAmount})`;
-                cardEl.style.transform = transformWithScale;
-
-                // Agregar clase para aplicar z-index y sombra
-                cardEl.classList.add('enlarged');
-
-                // Aumentar z-index para que quede por encima
-                cardEl.style.zIndex = 200;
-
-                console.log('📍 Carta agrandada:', cardData.value, '- Haz clic nuevamente para seleccionar');
-                return; // Salir sin seleccionar todavía
+            /**
+             * Actualiza la transformación de la carta
+             * @param {number} offsetY - Desplazamiento adicional en Y
+             */
+            function updateCardTransform(offsetY = 0) {
+                const finalY = baseY + offsetY;
+                cardEl.style.transform = `translateX(${baseX}px) translateY(${finalY}px) rotate(${angle}deg)`;
             }
 
-            // SEGUNDO TOQUE: Confirmar selección
-            console.log('✅ Carta seleccionada:', cardData.value);
+            /**
+             * Levanta la carta hacia arriba
+             */
+            function liftCard() {
+                // Bajar todas las demás cartas primero
+                const allCards = fanContainerEl.querySelectorAll('.fan-card');
+                allCards.forEach(card => {
+                    if (card !== cardEl) {
+                        card.classList.remove('lifted');
+                        const otherBaseX = parseFloat(card.dataset.baseX);
+                        const otherBaseY = parseFloat(card.dataset.baseY);
+                        const otherAngle = parseFloat(card.dataset.angle);
+                        card.style.transform = `translateX(${otherBaseX}px) translateY(${otherBaseY}px) rotate(${otherAngle}deg)`;
+                    }
+                });
 
-            // Detener el timer
-            stopTimer();
+                // Levantar esta carta
+                cardEl.classList.add('lifted');
+                updateCardTransform(liftAmount);
+                console.log('⬆️ Carta levantada:', cardData.value);
+            }
 
-            // Marcar selección
-            selectedValue = cardData.value;
-            selectedSuit = cardData.suit;
+            /**
+             * Baja la carta a su posición original
+             */
+            function lowerCard() {
+                cardEl.classList.remove('lifted');
+                updateCardTransform(0);
+                console.log('⬇️ Carta bajada:', cardData.value);
+            }
 
-            // Deshabilitar todos los clics en las cartas
-            const allClickables = fanContainerEl.querySelectorAll('.card-number-clickable');
-            allClickables.forEach(clickable => {
-                clickable.style.pointerEvents = 'none';
+            /**
+             * Selecciona la carta y ejecuta la lógica del juego
+             */
+            function selectCard() {
+                // Si la ronda ya terminó, no hacer nada
+                if (!nextButton.classList.contains('hidden')) return;
+
+                console.log('✅ Carta SELECCIONADA:', cardData.value);
+
+                // Marcar visualmente como seleccionada
+                cardEl.classList.add('selected');
+                cardEl.classList.remove('lifted');
+
+                // Detener el timer
+                stopTimer();
+
+                // Guardar selección
+                selectedValue = cardData.value;
+                selectedSuit = cardData.suit;
+
+                // Deshabilitar interacción en todas las cartas
+                const allCards = fanContainerEl.querySelectorAll('.fan-card');
+                allCards.forEach(card => {
+                    card.style.pointerEvents = 'none';
+                });
+
+                // Verificar respuesta
+                checkAnswer(false);
+            }
+
+            // --- MANEJADORES DE EVENTOS ---
+
+            /**
+             * Click/Tap simple: Levantar o bajar la carta
+             */
+            cardEl.addEventListener('click', (e) => {
+                // Si la ronda ya terminó, no hacer nada
+                if (!nextButton.classList.contains('hidden')) return;
+
+                // Detectar doble click (dos clicks en menos de 400ms)
+                const now = Date.now();
+                const timeSinceLastClick = now - lastClickTime;
+
+                if (timeSinceLastClick < 400 && cardEl.classList.contains('lifted')) {
+                    // DOBLE CLICK: Seleccionar carta
+                    selectCard();
+                    lastClickTime = 0; // Resetear
+                    return;
+                }
+
+                lastClickTime = now;
+
+                // Click simple: toggle lift
+                if (cardEl.classList.contains('lifted')) {
+                    lowerCard();
+                } else {
+                    liftCard();
+                }
             });
 
-            // Verificar respuesta
-            checkAnswer(false);
+            /**
+             * Inicio del drag (mouse o touch)
+             */
+            function handleDragStart(clientY) {
+                if (!nextButton.classList.contains('hidden')) return;
+
+                dragStartY = clientY;
+                dragStartTime = Date.now();
+                isDragging = false; // No es drag hasta que se mueva suficiente
+            }
+
+            /**
+             * Durante el drag
+             */
+            function handleDragMove(clientY) {
+                if (!nextButton.classList.contains('hidden')) return;
+                if (dragStartY === 0) return;
+
+                const deltaY = dragStartY - clientY; // Positivo = arriba, negativo = abajo
+
+                // Considerar como drag si se movió más de 5px
+                if (Math.abs(deltaY) > 5) {
+                    isDragging = true;
+
+                    // Si no está levantada, levantarla primero
+                    if (!cardEl.classList.contains('lifted') && deltaY > 0) {
+                        liftCard();
+                    }
+
+                    // Aplicar desplazamiento temporal mientras arrastra
+                    if (cardEl.classList.contains('lifted')) {
+                        // Limitar el movimiento: entre 0 y -100px adicionales
+                        const additionalOffset = Math.max(-100, Math.min(0, liftAmount - deltaY));
+                        updateCardTransform(additionalOffset);
+                    }
+                }
+            }
+
+            /**
+             * Fin del drag
+             */
+            function handleDragEnd(clientY) {
+                if (!nextButton.classList.contains('hidden')) return;
+                if (dragStartY === 0) return;
+
+                const deltaY = dragStartY - clientY;
+                const dragDuration = Date.now() - dragStartTime;
+
+                // Si se arrastró hacia arriba más de 40px: SELECCIONAR
+                if (isDragging && deltaY > 40 && cardEl.classList.contains('lifted')) {
+                    selectCard();
+                }
+                // Si se arrastró hacia abajo: BAJAR
+                else if (isDragging && deltaY < -20 && cardEl.classList.contains('lifted')) {
+                    lowerCard();
+                }
+                // Si no se movió lo suficiente, restaurar posición
+                else if (cardEl.classList.contains('lifted')) {
+                    updateCardTransform(liftAmount);
+                }
+
+                // Reset
+                dragStartY = 0;
+                isDragging = false;
+            }
+
+            // Mouse events
+            cardEl.addEventListener('mousedown', (e) => {
+                e.preventDefault();
+                handleDragStart(e.clientY);
+            });
+
+            document.addEventListener('mousemove', (e) => {
+                if (dragStartY > 0) {
+                    handleDragMove(e.clientY);
+                }
+            });
+
+            document.addEventListener('mouseup', (e) => {
+                handleDragEnd(e.clientY);
+            });
+
+            // Touch events
+            cardEl.addEventListener('touchstart', (e) => {
+                handleDragStart(e.touches[0].clientY);
+            });
+
+            cardEl.addEventListener('touchmove', (e) => {
+                if (dragStartY > 0) {
+                    e.preventDefault(); // Prevenir scroll
+                    handleDragMove(e.touches[0].clientY);
+                }
+            });
+
+            cardEl.addEventListener('touchend', (e) => {
+                if (e.changedTouches.length > 0) {
+                    handleDragEnd(e.changedTouches[0].clientY);
+                }
+            });
         }
 
         /** Cambia el modo de entrenamiento. */
@@ -1167,23 +1294,23 @@
                 }
             });
 
-            // Reactivar cartas del abanico y limpiar estado de agrandado
+            // Reactivar cartas del abanico y limpiar estados
             const fanCards = fanContainerEl.querySelectorAll('.fan-card');
             fanCards.forEach(card => {
-                // Remover clase 'enlarged' si la tenía
-                card.classList.remove('enlarged');
+                // Remover clases de estado
+                card.classList.remove('lifted', 'selected');
 
-                // Restaurar transform original (sin scale)
-                const originalTransform = card.dataset.originalTransform;
-                if (originalTransform) {
-                    card.style.transform = originalTransform;
+                // Restaurar posición original
+                const baseX = parseFloat(card.dataset.baseX);
+                const baseY = parseFloat(card.dataset.baseY);
+                const angle = parseFloat(card.dataset.angle);
+
+                if (!isNaN(baseX) && !isNaN(baseY) && !isNaN(angle)) {
+                    card.style.transform = `translateX(${baseX}px) translateY(${baseY}px) rotate(${angle}deg)`;
                 }
-            });
 
-            // Reactivar las áreas clickeables (los números) para permitir nuevo click
-            const allClickables = fanContainerEl.querySelectorAll('.card-number-clickable');
-            allClickables.forEach(clickable => {
-                clickable.style.pointerEvents = 'auto';
+                // Reactivar interacción
+                card.style.pointerEvents = 'auto';
             });
 
             // Carta de feedback: Ponerla boca abajo y limpiar la X roja
