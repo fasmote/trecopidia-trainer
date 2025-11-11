@@ -1039,9 +1039,12 @@
                     // Mostrar botón verde para reanudar
                     nextButton.classList.remove('hidden');
 
-                    // NO hacer auto-retry
                     resultMessageEl.textContent = message;
                     resultMessageEl.className = `mt-6 p-4 text-center rounded-lg font-bold ${resultClass}`;
+
+                    // Actualizar Scoreboard
+                    updateScoreboard();
+
                     return; // Salir sin auto-retry
                 }
 
@@ -1054,61 +1057,72 @@
                 isRetrying = true;
                 lastWrongCard = { value: selectedValue || 0, suit: selectedSuit || '' };
 
-                // NO revelar la carta correcta en modo clásico
-                // En modo abanico no hay carta de feedback
+                resultMessageEl.textContent = message;
+                resultMessageEl.className = `mt-6 p-4 text-center rounded-lg font-bold ${resultClass}`;
+
+                // Actualizar Scoreboard
+                updateScoreboard();
+
+                // Auto-retry después de 4 segundos
+                setTimeout(() => {
+                    startPractice();
+                }, 4000);
+
+                return; // Salir para no ejecutar el código de abajo
+            }
+
+            // El usuario hizo una selección, resetear contador de timeouts
+            consecutiveTimeoutsWithoutSelection = 0;
+
+            // Lógica de chequeo de usuario
+            const isCorrectValue = selectedValue === correctInvertedCard.value;
+            const isCorrectSuit = selectedSuit === correctInvertedCard.suit;
+            isCorrect = isCorrectValue && isCorrectSuit;
+
+            if (isCorrect) {
+                score++; // Incrementar score
+                message = `¡🎉 Correcto! ¡Dominado!`;
+                resultClass = 'bg-green-600 text-white';
+                playCorrectSound();
+                launchConfetti();
+
+                // Voltear la carta de feedback para revelar la respuesta CORRECTA
+                feedbackCardEl.classList.add('flipped');
+
+                // Resetear el estado de reintento
+                isRetrying = false;
+                lastWrongCard = null;
             } else {
-                // El usuario hizo una selección, resetear contador de timeouts
-                consecutiveTimeoutsWithoutSelection = 0;
-                // Lógica de chequeo de usuario
-                const isCorrectValue = selectedValue === correctInvertedCard.value;
-                const isCorrectSuit = selectedSuit === correctInvertedCard.suit;
-                isCorrect = isCorrectValue && isCorrectSuit;
+                message = `❌ Incorrecto. ¡Inténtalo de nuevo!`;
 
-                if (isCorrect) {
-                    score++; // Incrementar score
-                    message = `¡🎉 Correcto! ¡Dominado!`;
-                    resultClass = 'bg-green-600 text-white';
-                    playCorrectSound();
-                    launchConfetti();
+                // Explicación de los errores
+                if (!isCorrectValue && !isCorrectSuit) {
+                    message += ' (Valor y Palo incorrectos)';
+                } else if (!isCorrectValue) {
+                    message += ' (Valor incorrecto: Deben sumar 13)';
+                } else if (!isCorrectSuit) {
+                    message += ' (Palo incorrecto: T-C y P-D)';
+                }
 
-                    // Voltear la carta de feedback para revelar la respuesta CORRECTA
+                resultClass = 'bg-red-600 text-white';
+                playIncorrectSound();
+                shakeEffect();
+
+                // Guardar la carta incorrecta y activar modo reintento
+                isRetrying = true;
+                lastWrongCard = { value: selectedValue, suit: selectedSuit };
+
+                // En modo CLÁSICO: mostrar la carta incorrecta elegida con X
+                if (currentMode === 'classic') {
+                    // Renderizar la carta INCORRECTA que eligió el usuario
+                    const wrongCard = { value: selectedValue, suit: selectedSuit };
+                    renderFeedbackCardContent(wrongCard);
+
+                    // Agregar clase para mostrar la X
+                    feedbackCardBackEl.classList.add('wrong-choice');
+
+                    // Voltear para mostrar la carta incorrecta
                     feedbackCardEl.classList.add('flipped');
-
-                    // Resetear el estado de reintento
-                    isRetrying = false;
-                    lastWrongCard = null;
-                } else {
-                    message = `❌ Incorrecto. ¡Inténtalo de nuevo!`;
-
-                    // Explicación de los errores
-                    if (!isCorrectValue && !isCorrectSuit) {
-                        message += ' (Valor y Palo incorrectos)';
-                    } else if (!isCorrectValue) {
-                        message += ' (Valor incorrecto: Deben sumar 13)';
-                    } else if (!isCorrectSuit) {
-                        message += ' (Palo incorrecto: T-C y P-D)';
-                    }
-
-                    resultClass = 'bg-red-600 text-white';
-                    playIncorrectSound();
-                    shakeEffect();
-
-                    // Guardar la carta incorrecta y activar modo reintento
-                    isRetrying = true;
-                    lastWrongCard = { value: selectedValue, suit: selectedSuit };
-
-                    // En modo CLÁSICO: mostrar la carta incorrecta elegida con X
-                    if (currentMode === 'classic') {
-                        // Renderizar la carta INCORRECTA que eligió el usuario
-                        const wrongCard = { value: selectedValue, suit: selectedSuit };
-                        renderFeedbackCardContent(wrongCard);
-
-                        // Agregar clase para mostrar la X
-                        feedbackCardBackEl.classList.add('wrong-choice');
-
-                        // Voltear para mostrar la carta incorrecta
-                        feedbackCardEl.classList.add('flipped');
-                    }
                 }
             }
 
