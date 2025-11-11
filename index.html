@@ -1610,11 +1610,14 @@
                     }, 3000);
 
                 } else if (currentMode === 'fan') {
-                    // En modo ABANICO: NO hacer auto-retry
-                    // El usuario debe hacer click en "Probar otra vez" manualmente
-                    // Porque la carta incorrecta ya voló y desapareció del mazo
-                    console.log('🎴 Modo Abanico: Mostrar botón manual, NO auto-retry');
-                    nextButton.classList.remove('hidden');
+                    // En modo ABANICO: Auto-retry RÁPIDO para mantener continuidad del juego
+                    // La carta incorrecta ya voló, el usuario puede seguir seleccionando inmediatamente
+                    // Delay corto (1s) solo para que vea el mensaje de error
+                    console.log('🎴 Modo Abanico: Auto-retry rápido en 1 segundo para continuar');
+                    setTimeout(() => {
+                        console.log('🔁 Ejecutando auto-retry rápido (modo abanico)');
+                        startPractice();
+                    }, 1000);
                 }
             }
 
