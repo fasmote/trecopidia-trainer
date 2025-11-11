@@ -919,9 +919,9 @@
             // Reproducir sonido de inicio
             playStartSound();
 
-            // Resetear contador de timeouts sin selección (el usuario volvió a jugar)
-            console.log('🔄 Reseteando contador en startPractice:', consecutiveTimeoutsWithoutSelection, '→ 0');
-            consecutiveTimeoutsWithoutSelection = 0;
+            // NO resetear el contador aquí - se resetea en checkAnswer cuando el usuario hace una selección
+            // Si lo reseteamos aquí, nunca llegará a 3 porque auto-retry llama startPractice()
+            console.log('ℹ️ Contador actual:', consecutiveTimeoutsWithoutSelection, '(no se resetea en startPractice)');
 
             // Limpiar estado y UI
             resultMessageEl.textContent = '';
