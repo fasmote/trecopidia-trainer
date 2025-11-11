@@ -914,10 +914,13 @@
 
         /** Inicia una nueva ronda de práctica. */
         function startPractice() {
+            console.log('🎮 startPractice() called');
+
             // Reproducir sonido de inicio
             playStartSound();
 
             // Resetear contador de timeouts sin selección (el usuario volvió a jugar)
+            console.log('🔄 Reseteando contador en startPractice:', consecutiveTimeoutsWithoutSelection, '→ 0');
             consecutiveTimeoutsWithoutSelection = 0;
 
             // Limpiar estado y UI
@@ -1010,6 +1013,11 @@
         function checkAnswer(isTimeout) {
             stopTimer();
 
+            console.log('=== checkAnswer called ===');
+            console.log('isTimeout:', isTimeout);
+            console.log('selectedValue:', selectedValue);
+            console.log('selectedSuit:', selectedSuit);
+
             // Deshabilitar botones de selección
             document.querySelectorAll('.selection-btn').forEach(btn => btn.disabled = true);
 
@@ -1022,16 +1030,23 @@
                 // Verificar si el usuario no seleccionó NADA (ni valor ni palo)
                 const noSelection = (selectedValue === null && selectedSuit === null);
 
+                console.log('🔍 Timeout detected!');
+                console.log('noSelection:', noSelection);
+                console.log('consecutiveTimeoutsWithoutSelection ANTES:', consecutiveTimeoutsWithoutSelection);
+
                 if (noSelection) {
                     // Incrementar contador de timeouts sin selección
                     consecutiveTimeoutsWithoutSelection++;
+                    console.log('⬆️ Incrementando contador a:', consecutiveTimeoutsWithoutSelection);
                 } else {
                     // Si seleccionó algo (aunque sea solo uno), resetear contador
                     consecutiveTimeoutsWithoutSelection = 0;
+                    console.log('🔄 Resetear contador (selección parcial)');
                 }
 
                 // Si llegamos a 3 timeouts consecutivos sin selección, detener el juego
                 if (consecutiveTimeoutsWithoutSelection >= 3) {
+                    console.log('🛑 PAUSANDO JUEGO - 3 timeouts consecutivos alcanzados');
                     message = `😴 ¿Nadie jugando? El juego se ha pausado.`;
                     resultClass = 'bg-yellow-600 text-white';
                     playIncorrectSound();
@@ -1045,9 +1060,11 @@
                     // Actualizar Scoreboard
                     updateScoreboard();
 
+                    console.log('✅ Juego pausado, esperando click en botón verde');
                     return; // Salir sin auto-retry
                 }
 
+                console.log('⏱️ Timeout pero contador < 3, haciendo auto-retry');
                 message = `⏳ ¡Tiempo agotado! Inténtalo de nuevo.`;
                 resultClass = 'bg-red-600 text-white';
                 playIncorrectSound();
@@ -1064,13 +1081,16 @@
                 updateScoreboard();
 
                 // Auto-retry después de 4 segundos
+                console.log('🔁 Auto-retry programado para 4 segundos...');
                 setTimeout(() => {
+                    console.log('🔁 Ejecutando auto-retry por timeout');
                     startPractice();
                 }, 4000);
 
                 return; // Salir para no ejecutar el código de abajo
             }
 
+            console.log('✅ Usuario hizo selección, resetear contador');
             // El usuario hizo una selección, resetear contador de timeouts
             consecutiveTimeoutsWithoutSelection = 0;
 
