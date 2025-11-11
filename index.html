@@ -929,13 +929,19 @@
 
                 // Marcar botones incorrectos si estamos reintentando (modo clásico)
                 if (isRetrying && lastWrongCard) {
-                    // Marcar valor incorrecto
+                    // Solo marcar valor si era incorrecto (comparar con la respuesta correcta)
                     if (btn.dataset.value && parseInt(btn.dataset.value) === lastWrongCard.value) {
-                        btn.classList.add('wrong');
+                        // Verificar si el valor elegido era diferente al correcto
+                        if (lastWrongCard.value !== correctInvertedCard.value) {
+                            btn.classList.add('wrong');
+                        }
                     }
-                    // Marcar palo incorrecto
+                    // Solo marcar palo si era incorrecto (comparar con la respuesta correcta)
                     if (btn.dataset.suit && btn.dataset.suit === lastWrongCard.suit) {
-                        btn.classList.add('wrong');
+                        // Verificar si el palo elegido era diferente al correcto
+                        if (lastWrongCard.suit !== correctInvertedCard.suit) {
+                            btn.classList.add('wrong');
+                        }
                     }
                 } else {
                     btn.classList.remove('wrong');
