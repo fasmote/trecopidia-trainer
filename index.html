@@ -1363,10 +1363,16 @@
             });
 
             // Reactivar cartas del abanico y limpiar estados
+            console.log('🔄 Limpiando cartas del abanico. isRetrying:', isRetrying, 'lastWrongCard:', lastWrongCard);
+
             const fanCards = fanContainerEl.querySelectorAll('.fan-card');
+            console.log('📦 Total de cartas encontradas:', fanCards.length);
+
             fanCards.forEach(card => {
                 const cardValue = parseInt(card.dataset.cardValue);
                 const cardSuit = card.dataset.cardSuit;
+
+                console.log(`  🎴 Procesando carta ${cardValue} de ${cardSuit}`);
 
                 // Si estamos reintentando y esta es la carta incorrecta, mantenerla oculta
                 if (isRetrying && lastWrongCard &&
@@ -1375,8 +1381,9 @@
                     // CARTA INCORRECTA: Mantener invisible y deshabilitada
                     card.style.opacity = '0';
                     card.style.pointerEvents = 'none';
+                    card.style.visibility = 'hidden'; // Extra: asegurar que no se vea
                     // No restaurar posición, dejarla donde quedó (volando)
-                    console.log('🚫 Carta incorrecta permanece fuera del mazo:', cardValue);
+                    console.log(`  🚫 CARTA INCORRECTA ${cardValue} - Mantener oculta`);
                 } else {
                     // CARTAS NORMALES: Restaurar todo
                     // Remover clases de estado (lifted, selected, flying)
@@ -1393,9 +1400,11 @@
 
                     // Restaurar opacidad (la animación flying pone opacity: 0)
                     card.style.opacity = '1';
+                    card.style.visibility = 'visible';
 
                     // Reactivar interacción
                     card.style.pointerEvents = 'auto';
+                    console.log(`  ✅ Carta ${cardValue} - Restaurada`);
                 }
             });
 
@@ -1440,7 +1449,15 @@
                 magicianSelectionEl.classList.add('hidden');
                 fanSelectionEl.classList.remove('hidden');
                 switchToClassicBtn.classList.remove('hidden');
-                renderFanCards();
+
+                // Solo renderizar cartas si NO estamos en retry
+                // Si es retry, las cartas ya existen y solo se limpian sus estados arriba
+                if (!isRetrying) {
+                    console.log('🎴 Generando nuevas cartas del abanico');
+                    renderFanCards();
+                } else {
+                    console.log('🔄 Modo retry: NO regenerar cartas, mantener estado');
+                }
             }
 
             startButton.classList.add('hidden');
@@ -1573,7 +1590,7 @@
                 isRetrying = true;
                 lastWrongCard = { value: selectedValue, suit: selectedSuit };
 
-                // En modo CLÁSICO: mostrar la carta incorrecta elegida con X
+                // En modo CLÁSICO: mostrar la carta incorrecta elegida con X y hacer auto-retry
                 if (currentMode === 'classic') {
                     // Renderizar la carta INCORRECTA que eligió el usuario
                     const wrongCard = { value: selectedValue, suit: selectedSuit };
@@ -1584,6 +1601,20 @@
 
                     // Voltear para mostrar la carta incorrecta
                     feedbackCardEl.classList.add('flipped');
+
+                    // AUTO-RETRY en modo clásico después de 3 segundos
+                    console.log('🔁 Modo Clásico: Auto-retry programado para 3 segundos...');
+                    setTimeout(() => {
+                        console.log('🔁 Ejecutando auto-retry (modo clásico)');
+                        startPractice();
+                    }, 3000);
+
+                } else if (currentMode === 'fan') {
+                    // En modo ABANICO: NO hacer auto-retry
+                    // El usuario debe hacer click en "Probar otra vez" manualmente
+                    // Porque la carta incorrecta ya voló y desapareció del mazo
+                    console.log('🎴 Modo Abanico: Mostrar botón manual, NO auto-retry');
+                    nextButton.classList.remove('hidden');
                 }
             }
 
@@ -1600,12 +1631,8 @@
                     lastWrongCard = null;
                     startPractice();
                 }, 2000);
-            } else {
-                // Si es incorrecto, espera 4 segundos y reintenta con la misma carta
-                setTimeout(() => {
-                    startPractice();
-                }, 4000);
             }
+            // Si es incorrecto, la lógica de retry ya se maneja arriba en el bloque else
         }
 
         // --- INICIALIZACIÓN ---
