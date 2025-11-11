@@ -1,0 +1,278 @@
+(index):64 cdn.tailwindcss.com should not be used in production. To use Tailwind CSS in production, install it as a PostCSS plugin or use the Tailwind CLI: https://tailwindcss.com/docs/installation
+(anonymous) @ (index):64
+(anonymous) @ (index):64
+index.html:917 🎮 startPractice() called
+index.html:923 🔄 Reseteando contador en startPractice: 0 → 0
+index.html:1016 === checkAnswer called ===
+index.html:1017 isTimeout: true
+index.html:1018 selectedValue: null
+index.html:1019 selectedSuit: null
+index.html:1033 🔍 Timeout detected!
+index.html:1034 noSelection: true
+index.html:1035 consecutiveTimeoutsWithoutSelection ANTES: 0
+index.html:1040 ⬆️ Incrementando contador a: 1
+index.html:1067 ⏱️ Timeout pero contador < 3, haciendo auto-retry
+index.html:1084 🔁 Auto-retry programado para 4 segundos...
+index.html:1086 🔁 Ejecutando auto-retry por timeout
+index.html:917 🎮 startPractice() called
+index.html:923 🔄 Reseteando contador en startPractice: 1 → 0
+index.html:1016 === checkAnswer called ===
+index.html:1017 isTimeout: true
+index.html:1018 selectedValue: null
+index.html:1019 selectedSuit: null
+index.html:1033 🔍 Timeout detected!
+index.html:1034 noSelection: true
+index.html:1035 consecutiveTimeoutsWithoutSelection ANTES: 0
+index.html:1040 ⬆️ Incrementando contador a: 1
+index.html:1067 ⏱️ Timeout pero contador < 3, haciendo auto-retry
+index.html:1084 🔁 Auto-retry programado para 4 segundos...
+index.html:1086 🔁 Ejecutando auto-retry por timeout
+index.html:917 🎮 startPractice() called
+index.html:923 🔄 Reseteando contador en startPractice: 1 → 0
+index.html:1016 === checkAnswer called ===
+index.html:1017 isTimeout: true
+index.html:1018 selectedValue: null
+index.html:1019 selectedSuit: null
+index.html:1033 🔍 Timeout detected!
+index.html:1034 noSelection: true
+index.html:1035 consecutiveTimeoutsWithoutSelection ANTES: 0
+index.html:1040 ⬆️ Incrementando contador a: 1
+index.html:1067 ⏱️ Timeout pero contador < 3, haciendo auto-retry
+index.html:1084 🔁 Auto-retry programado para 4 segundos...
+index.html:1086 🔁 Ejecutando auto-retry por timeout
+index.html:917 🎮 startPractice() called
+index.html:923 🔄 Reseteando contador en startPractice: 1 → 0
+index.html:1016 === checkAnswer called ===
+index.html:1017 isTimeout: true
+index.html:1018 selectedValue: null
+index.html:1019 selectedSuit: null
+index.html:1033 🔍 Timeout detected!
+index.html:1034 noSelection: true
+index.html:1035 consecutiveTimeoutsWithoutSelection ANTES: 0
+index.html:1040 ⬆️ Incrementando contador a: 1
+index.html:1067 ⏱️ Timeout pero contador < 3, haciendo auto-retry
+index.html:1084 🔁 Auto-retry programado para 4 segundos...
+index.html:1086 🔁 Ejecutando auto-retry por timeout
+index.html:917 🎮 startPractice() called
+index.html:923 🔄 Reseteando contador en startPractice: 1 → 0
+index.html:1016 === checkAnswer called ===
+index.html:1017 isTimeout: true
+index.html:1018 selectedValue: null
+index.html:1019 selectedSuit: null
+index.html:1033 🔍 Timeout detected!
+index.html:1034 noSelection: true
+index.html:1035 consecutiveTimeoutsWithoutSelection ANTES: 0
+index.html:1040 ⬆️ Incrementando contador a: 1
+index.html:1067 ⏱️ Timeout pero contador < 3, haciendo auto-retry
+index.html:1084 🔁 Auto-retry programado para 4 segundos...
+index.html:1086 🔁 Ejecutando auto-retry por timeout
+index.html:917 🎮 startPractice() called
+index.html:923 🔄 Reseteando contador en startPractice: 1 → 0
+index.html:1016 === checkAnswer called ===
+index.html:1017 isTimeout: true
+index.html:1018 selectedValue: null
+index.html:1019 selectedSuit: null
+index.html:1033 🔍 Timeout detected!
+index.html:1034 noSelection: true
+index.html:1035 consecutiveTimeoutsWithoutSelection ANTES: 0
+index.html:1040 ⬆️ Incrementando contador a: 1
+index.html:1067 ⏱️ Timeout pero contador < 3, haciendo auto-retry
+index.html:1084 🔁 Auto-retry programado para 4 segundos...
+index.html:1086 🔁 Ejecutando auto-retry por timeout
+index.html:917 🎮 startPractice() called
+index.html:923 🔄 Reseteando contador en startPractice: 1 → 0
+index.html:1016 === checkAnswer called ===
+index.html:1017 isTimeout: true
+index.html:1018 selectedValue: null
+index.html:1019 selectedSuit: null
+index.html:1033 🔍 Timeout detected!
+index.html:1034 noSelection: true
+index.html:1035 consecutiveTimeoutsWithoutSelection ANTES: 0
+index.html:1040 ⬆️ Incrementando contador a: 1
+index.html:1067 ⏱️ Timeout pero contador < 3, haciendo auto-retry
+index.html:1084 🔁 Auto-retry programado para 4 segundos...
+index.html:1086 🔁 Ejecutando auto-retry por timeout
+index.html:917 🎮 startPractice() called
+index.html:923 🔄 Reseteando contador en startPractice: 1 → 0
+index.html:1016 === checkAnswer called ===
+index.html:1017 isTimeout: true
+index.html:1018 selectedValue: null
+index.html:1019 selectedSuit: null
+index.html:1033 🔍 Timeout detected!
+index.html:1034 noSelection: true
+index.html:1035 consecutiveTimeoutsWithoutSelection ANTES: 0
+index.html:1040 ⬆️ Incrementando contador a: 1
+index.html:1067 ⏱️ Timeout pero contador < 3, haciendo auto-retry
+index.html:1084 🔁 Auto-retry programado para 4 segundos...
+index.html:1086 🔁 Ejecutando auto-retry por timeout
+index.html:917 🎮 startPractice() called
+index.html:923 🔄 Reseteando contador en startPractice: 1 → 0
+index.html:1016 === checkAnswer called ===
+index.html:1017 isTimeout: true
+index.html:1018 selectedValue: null
+index.html:1019 selectedSuit: null
+index.html:1033 🔍 Timeout detected!
+index.html:1034 noSelection: true
+index.html:1035 consecutiveTimeoutsWithoutSelection ANTES: 0
+index.html:1040 ⬆️ Incrementando contador a: 1
+index.html:1067 ⏱️ Timeout pero contador < 3, haciendo auto-retry
+index.html:1084 🔁 Auto-retry programado para 4 segundos...
+index.html:1086 🔁 Ejecutando auto-retry por timeout
+index.html:917 🎮 startPractice() called
+index.html:923 🔄 Reseteando contador en startPractice: 1 → 0
+index.html:1016 === checkAnswer called ===
+index.html:1017 isTimeout: true
+index.html:1018 selectedValue: null
+index.html:1019 selectedSuit: null
+index.html:1033 🔍 Timeout detected!
+index.html:1034 noSelection: true
+index.html:1035 consecutiveTimeoutsWithoutSelection ANTES: 0
+index.html:1040 ⬆️ Incrementando contador a: 1
+index.html:1067 ⏱️ Timeout pero contador < 3, haciendo auto-retry
+index.html:1084 🔁 Auto-retry programado para 4 segundos...
+index.html:1086 🔁 Ejecutando auto-retry por timeout
+index.html:917 🎮 startPractice() called
+index.html:923 🔄 Reseteando contador en startPractice: 1 → 0
+index.html:1016 === checkAnswer called ===
+index.html:1017 isTimeout: true
+index.html:1018 selectedValue: null
+index.html:1019 selectedSuit: null
+index.html:1033 🔍 Timeout detected!
+index.html:1034 noSelection: true
+index.html:1035 consecutiveTimeoutsWithoutSelection ANTES: 0
+index.html:1040 ⬆️ Incrementando contador a: 1
+index.html:1067 ⏱️ Timeout pero contador < 3, haciendo auto-retry
+index.html:1084 🔁 Auto-retry programado para 4 segundos...
+index.html:1086 🔁 Ejecutando auto-retry por timeout
+index.html:917 🎮 startPractice() called
+index.html:923 🔄 Reseteando contador en startPractice: 1 → 0
+index.html:1016 === checkAnswer called ===
+index.html:1017 isTimeout: true
+index.html:1018 selectedValue: null
+index.html:1019 selectedSuit: null
+index.html:1033 🔍 Timeout detected!
+index.html:1034 noSelection: true
+index.html:1035 consecutiveTimeoutsWithoutSelection ANTES: 0
+index.html:1040 ⬆️ Incrementando contador a: 1
+index.html:1067 ⏱️ Timeout pero contador < 3, haciendo auto-retry
+index.html:1084 🔁 Auto-retry programado para 4 segundos...
+index.html:1086 🔁 Ejecutando auto-retry por timeout
+index.html:917 🎮 startPractice() called
+index.html:923 🔄 Reseteando contador en startPractice: 1 → 0
+index.html:1016 === checkAnswer called ===
+index.html:1017 isTimeout: true
+index.html:1018 selectedValue: null
+index.html:1019 selectedSuit: null
+index.html:1033 🔍 Timeout detected!
+index.html:1034 noSelection: true
+index.html:1035 consecutiveTimeoutsWithoutSelection ANTES: 0
+index.html:1040 ⬆️ Incrementando contador a: 1
+index.html:1067 ⏱️ Timeout pero contador < 3, haciendo auto-retry
+index.html:1084 🔁 Auto-retry programado para 4 segundos...
+index.html:1086 🔁 Ejecutando auto-retry por timeout
+index.html:917 🎮 startPractice() called
+index.html:923 🔄 Reseteando contador en startPractice: 1 → 0
+index.html:1016 === checkAnswer called ===
+index.html:1017 isTimeout: true
+index.html:1018 selectedValue: null
+index.html:1019 selectedSuit: null
+index.html:1033 🔍 Timeout detected!
+index.html:1034 noSelection: true
+index.html:1035 consecutiveTimeoutsWithoutSelection ANTES: 0
+index.html:1040 ⬆️ Incrementando contador a: 1
+index.html:1067 ⏱️ Timeout pero contador < 3, haciendo auto-retry
+index.html:1084 🔁 Auto-retry programado para 4 segundos...
+index.html:1086 🔁 Ejecutando auto-retry por timeout
+index.html:917 🎮 startPractice() called
+index.html:923 🔄 Reseteando contador en startPractice: 1 → 0
+index.html:1016 === checkAnswer called ===
+index.html:1017 isTimeout: true
+index.html:1018 selectedValue: null
+index.html:1019 selectedSuit: null
+index.html:1033 🔍 Timeout detected!
+index.html:1034 noSelection: true
+index.html:1035 consecutiveTimeoutsWithoutSelection ANTES: 0
+index.html:1040 ⬆️ Incrementando contador a: 1
+index.html:1067 ⏱️ Timeout pero contador < 3, haciendo auto-retry
+index.html:1084 🔁 Auto-retry programado para 4 segundos...
+index.html:1086 🔁 Ejecutando auto-retry por timeout
+index.html:917 🎮 startPractice() called
+index.html:923 🔄 Reseteando contador en startPractice: 1 → 0
+index.html:1016 === checkAnswer called ===
+index.html:1017 isTimeout: true
+index.html:1018 selectedValue: null
+index.html:1019 selectedSuit: null
+index.html:1033 🔍 Timeout detected!
+index.html:1034 noSelection: true
+index.html:1035 consecutiveTimeoutsWithoutSelection ANTES: 0
+index.html:1040 ⬆️ Incrementando contador a: 1
+index.html:1067 ⏱️ Timeout pero contador < 3, haciendo auto-retry
+index.html:1084 🔁 Auto-retry programado para 4 segundos...
+index.html:1086 🔁 Ejecutando auto-retry por timeout
+index.html:917 🎮 startPractice() called
+index.html:923 🔄 Reseteando contador en startPractice: 1 → 0
+index.html:1016 === checkAnswer called ===
+index.html:1017 isTimeout: true
+index.html:1018 selectedValue: null
+index.html:1019 selectedSuit: null
+index.html:1033 🔍 Timeout detected!
+index.html:1034 noSelection: true
+index.html:1035 consecutiveTimeoutsWithoutSelection ANTES: 0
+index.html:1040 ⬆️ Incrementando contador a: 1
+index.html:1067 ⏱️ Timeout pero contador < 3, haciendo auto-retry
+index.html:1084 🔁 Auto-retry programado para 4 segundos...
+index.html:1086 🔁 Ejecutando auto-retry por timeout
+index.html:917 🎮 startPractice() called
+index.html:923 🔄 Reseteando contador en startPractice: 1 → 0
+index.html:1016 === checkAnswer called ===
+index.html:1017 isTimeout: true
+index.html:1018 selectedValue: null
+index.html:1019 selectedSuit: null
+index.html:1033 🔍 Timeout detected!
+index.html:1034 noSelection: true
+index.html:1035 consecutiveTimeoutsWithoutSelection ANTES: 0
+index.html:1040 ⬆️ Incrementando contador a: 1
+index.html:1067 ⏱️ Timeout pero contador < 3, haciendo auto-retry
+index.html:1084 🔁 Auto-retry programado para 4 segundos...
+index.html:1086 🔁 Ejecutando auto-retry por timeout
+index.html:917 🎮 startPractice() called
+index.html:923 🔄 Reseteando contador en startPractice: 1 → 0
+index.html:1016 === checkAnswer called ===
+index.html:1017 isTimeout: true
+index.html:1018 selectedValue: null
+index.html:1019 selectedSuit: null
+index.html:1033 🔍 Timeout detected!
+index.html:1034 noSelection: true
+index.html:1035 consecutiveTimeoutsWithoutSelection ANTES: 0
+index.html:1040 ⬆️ Incrementando contador a: 1
+index.html:1067 ⏱️ Timeout pero contador < 3, haciendo auto-retry
+index.html:1084 🔁 Auto-retry programado para 4 segundos...
+index.html:1086 🔁 Ejecutando auto-retry por timeout
+index.html:917 🎮 startPractice() called
+index.html:923 🔄 Reseteando contador en startPractice: 1 → 0
+index.html:1016 === checkAnswer called ===
+index.html:1017 isTimeout: true
+index.html:1018 selectedValue: null
+index.html:1019 selectedSuit: null
+index.html:1033 🔍 Timeout detected!
+index.html:1034 noSelection: true
+index.html:1035 consecutiveTimeoutsWithoutSelection ANTES: 0
+index.html:1040 ⬆️ Incrementando contador a: 1
+index.html:1067 ⏱️ Timeout pero contador < 3, haciendo auto-retry
+index.html:1084 🔁 Auto-retry programado para 4 segundos...
+index.html:1086 🔁 Ejecutando auto-retry por timeout
+index.html:917 🎮 startPractice() called
+index.html:923 🔄 Reseteando contador en startPractice: 1 → 0
+index.html:1016 === checkAnswer called ===
+index.html:1017 isTimeout: true
+index.html:1018 selectedValue: null
+index.html:1019 selectedSuit: null
+index.html:1033 🔍 Timeout detected!
+index.html:1034 noSelection: true
+index.html:1035 consecutiveTimeoutsWithoutSelection ANTES: 0
+index.html:1040 ⬆️ Incrementando contador a: 1
+index.html:1067 ⏱️ Timeout pero contador < 3, haciendo auto-retry
+index.html:1084 🔁 Auto-retry programado para 4 segundos...
+index.html:1086 🔁 Ejecutando auto-retry por timeout
+index.html:917 🎮 startPractice() called
+index.html:923 🔄 Reseteando contador en startPractice: 1 → 0
