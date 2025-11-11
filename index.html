@@ -383,6 +383,40 @@
             animation: cardReveal 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
         }
 
+        /* Efecto especial para la PRIMERA carta del juego */
+        /* Rotación completa más dramática desde muy pequeño */
+        @keyframes cardFirstReveal {
+            0% {
+                transform: scale(0.1) rotate(-180deg);
+                opacity: 0;
+                filter: brightness(0.3);
+            }
+            50% {
+                transform: scale(0.8) rotate(180deg);
+                opacity: 0.7;
+                filter: brightness(1.5);
+            }
+            70% {
+                transform: scale(1.15) rotate(360deg);
+                opacity: 1;
+                filter: brightness(1.4);
+            }
+            85% {
+                transform: scale(0.9) rotate(355deg);
+                filter: brightness(1.1);
+            }
+            100% {
+                transform: scale(1) rotate(360deg);
+                opacity: 1;
+                filter: brightness(1);
+            }
+        }
+
+        /* Clase que aplica la animación de primera revelación */
+        .card-first-reveal {
+            animation: cardFirstReveal 1.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
     </style>
 </head>
 <body class="p-4 md:p-8 min-h-screen flex items-center justify-center">
@@ -613,6 +647,8 @@
         let isRetrying = false; // Para saber si estamos reintentando la misma carta
         let lastWrongCard = null; // Para recordar qué carta se eligió mal
         let consecutiveTimeoutsWithoutSelection = 0; // Contador de timeouts sin selección
+        let isFirstCard = true; // Flag para saber si es la primera carta del juego
+        let previousNominatedCard = null; // Para comparar si la carta cambió
 
         // --- ELEMENTOS DEL DOM ---
         const nominatedCardEl = document.getElementById('nominated-card');
@@ -770,6 +806,11 @@
          * Renderiza la carta nombrada con efecto de revelación mágica.
          * La carta aparece con una animación dramática: crece, rota y brilla.
          *
+         * LÓGICA DE ANIMACIONES:
+         * 1. Primera carta del juego: Animación especial con rotación completa de 360° (1.2s)
+         * 2. Carta cambió (nueva ronda): Animación normal de revelación (0.8s)
+         * 3. Carta NO cambió (reintento): SIN animación, la carta se queda quieta
+         *
          * @param {Object} card - La carta a renderizar con propiedades {value, suit}
          */
         function renderNominatedCard(card) {
@@ -786,14 +827,38 @@
             nominatedCardEl.className = `card ${display.colorClass}`;
             nominatedCardEl.classList.remove('hidden');
 
-            // Aplicar animación de revelación mágica
-            nominatedCardEl.classList.add('card-reveal');
+            // Determinar si la carta cambió comparando con la anterior
+            const cardChanged = !previousNominatedCard ||
+                                previousNominatedCard.value !== card.value ||
+                                previousNominatedCard.suit !== card.suit;
 
-            // Remover la clase de animación después de 800ms (duración de la animación)
-            // Esto permite que la animación se ejecute nuevamente en la próxima carta
-            setTimeout(() => {
-                nominatedCardEl.classList.remove('card-reveal');
-            }, 800);
+            // APLICAR ANIMACIÓN SEGÚN EL CASO:
+            if (isFirstCard) {
+                // CASO 1: Primera carta del juego - Efecto especial con rotación completa
+                nominatedCardEl.classList.add('card-first-reveal');
+
+                // Remover la clase después de 1200ms (duración de la animación especial)
+                setTimeout(() => {
+                    nominatedCardEl.classList.remove('card-first-reveal');
+                }, 1200);
+
+                // Marcar que ya no es la primera carta
+                isFirstCard = false;
+
+            } else if (cardChanged) {
+                // CASO 2: Carta cambió (nueva ronda) - Efecto normal de revelación
+                nominatedCardEl.classList.add('card-reveal');
+
+                // Remover la clase después de 800ms (duración de la animación normal)
+                setTimeout(() => {
+                    nominatedCardEl.classList.remove('card-reveal');
+                }, 800);
+
+            }
+            // CASO 3: Carta NO cambió (reintento) - Sin animación (no se ejecuta nada)
+
+            // Guardar la carta actual para futuras comparaciones
+            previousNominatedCard = { value: card.value, suit: card.suit };
         }
 
         /** Actualiza el estado de selección de un grupo de botones. */
@@ -951,10 +1016,19 @@
 
         // --- HANDLERS DE EVENTOS ---
 
-        /** Inicia una nueva ronda de práctica con el modo especificado. */
+        /**
+         * Inicia una nueva sesión de práctica con el modo especificado.
+         * Esta función se llama al inicio del juego cuando el usuario elige Classic o Fan.
+         *
+         * @param {string} mode - El modo de juego: 'classic' o 'fan'
+         */
         function startPracticeWithMode(mode) {
             currentMode = mode;
             modeSelectorEl.classList.add('hidden');
+
+            // Resetear el flag para que la primera carta tenga la animación especial
+            isFirstCard = true;
+
             startPractice();
         }
 
