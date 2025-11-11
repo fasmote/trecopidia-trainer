@@ -583,6 +583,7 @@
         let currentMode = null; // 'classic' o 'fan'
         let isRetrying = false; // Para saber si estamos reintentando la misma carta
         let lastWrongCard = null; // Para recordar qué carta se eligió mal
+        let consecutiveTimeoutsWithoutSelection = 0; // Contador de timeouts sin selección
 
         // --- ELEMENTOS DEL DOM ---
         const nominatedCardEl = document.getElementById('nominated-card');
@@ -916,6 +917,9 @@
             // Reproducir sonido de inicio
             playStartSound();
 
+            // Resetear contador de timeouts sin selección (el usuario volvió a jugar)
+            consecutiveTimeoutsWithoutSelection = 0;
+
             // Limpiar estado y UI
             resultMessageEl.textContent = '';
             resultMessageEl.className = 'mt-6 p-4 text-center rounded-lg font-semibold min-h-[50px]';
@@ -1015,6 +1019,32 @@
             let isCorrect = false;
 
             if (isTimeout) {
+                // Verificar si el usuario no seleccionó NADA (ni valor ni palo)
+                const noSelection = (selectedValue === null && selectedSuit === null);
+
+                if (noSelection) {
+                    // Incrementar contador de timeouts sin selección
+                    consecutiveTimeoutsWithoutSelection++;
+                } else {
+                    // Si seleccionó algo (aunque sea solo uno), resetear contador
+                    consecutiveTimeoutsWithoutSelection = 0;
+                }
+
+                // Si llegamos a 3 timeouts consecutivos sin selección, detener el juego
+                if (consecutiveTimeoutsWithoutSelection >= 3) {
+                    message = `😴 ¿Nadie jugando? El juego se ha pausado.`;
+                    resultClass = 'bg-yellow-600 text-white';
+                    playIncorrectSound();
+
+                    // Mostrar botón verde para reanudar
+                    nextButton.classList.remove('hidden');
+
+                    // NO hacer auto-retry
+                    resultMessageEl.textContent = message;
+                    resultMessageEl.className = `mt-6 p-4 text-center rounded-lg font-bold ${resultClass}`;
+                    return; // Salir sin auto-retry
+                }
+
                 message = `⏳ ¡Tiempo agotado! Inténtalo de nuevo.`;
                 resultClass = 'bg-red-600 text-white';
                 playIncorrectSound();
@@ -1027,6 +1057,8 @@
                 // NO revelar la carta correcta en modo clásico
                 // En modo abanico no hay carta de feedback
             } else {
+                // El usuario hizo una selección, resetear contador de timeouts
+                consecutiveTimeoutsWithoutSelection = 0;
                 // Lógica de chequeo de usuario
                 const isCorrectValue = selectedValue === correctInvertedCard.value;
                 const isCorrectSuit = selectedSuit === correctInvertedCard.suit;
