@@ -421,6 +421,25 @@
             animation: cardFirstReveal 1.2s cubic-bezier(0.34, 1.56, 0.64, 1);
         }
 
+        /* Animación de carta volando hacia el área de "Mazo Invisible" */
+        /* La carta se mueve rápidamente hacia arriba y se desvanece */
+        @keyframes flyToInvisibleDeck {
+            0% {
+                opacity: 1;
+                transform: translateX(var(--fly-start-x)) translateY(var(--fly-start-y)) rotate(var(--fly-start-rotate)) scale(1);
+            }
+            100% {
+                opacity: 0;
+                transform: translateX(0) translateY(-300px) rotate(0deg) scale(0.5);
+            }
+        }
+
+        /* Clase que aplica la animación de vuelo */
+        .fan-card.flying {
+            animation: flyToInvisibleDeck 0.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+            z-index: 300 !important; /* Por encima de todo durante el vuelo */
+        }
+
     </style>
 </head>
 <body class="p-4 md:p-8 min-h-screen flex items-center justify-center">
@@ -498,7 +517,7 @@
             <!-- 2B. MODO ABANICO: SELECCIÓN CON CARTAS -->
             <div id="fan-selection" class="mb-8 p-4 bg-gray-700 rounded-lg shadow-inner hidden">
                 <div class="flex justify-between items-center mb-4">
-                    <h2 class="text-xl font-semibold text-blue-300">2. Haz clic en la carta correcta</h2>
+                    <h2 class="text-xl font-semibold text-blue-300">2. Haz clic en la carta correcta y deslízala hacia arriba o doble click</h2>
                     <button id="switch-to-classic-btn" class="text-xs px-3 py-1 bg-purple-600 hover:bg-purple-700 text-white rounded transition hidden">
                         🔧 Cambiar a Clásico
                     </button>
@@ -1055,17 +1074,14 @@
             }
 
             /**
-             * Selecciona la carta y ejecuta la lógica del juego
+             * Selecciona la carta y ejecuta la lógica del juego.
+             * Incluye efecto visual: la carta vuela hacia arriba (hacia "Mazo Invisible").
              */
             function selectCard() {
                 // Si la ronda ya terminó, no hacer nada
                 if (!nextButton.classList.contains('hidden')) return;
 
                 console.log('✅ Carta SELECCIONADA:', cardData.value);
-
-                // Marcar visualmente como seleccionada
-                cardEl.classList.add('selected');
-                cardEl.classList.remove('lifted');
 
                 // Detener el timer
                 stopTimer();
@@ -1080,8 +1096,35 @@
                     card.style.pointerEvents = 'none';
                 });
 
-                // Verificar respuesta
-                checkAnswer(false);
+                // EFECTO VISUAL: Carta vuela hacia arriba
+                // Obtener posición actual de la carta para la animación
+                const currentTransform = cardEl.style.transform;
+                const transformMatch = currentTransform.match(/translateX\(([-\d.]+)px\) translateY\(([-\d.]+)px\) rotate\(([-\d.]+)deg\)/);
+
+                if (transformMatch) {
+                    const currentX = transformMatch[1];
+                    const currentY = transformMatch[2];
+                    const currentRotate = transformMatch[3];
+
+                    // Establecer variables CSS para la animación
+                    cardEl.style.setProperty('--fly-start-x', `${currentX}px`);
+                    cardEl.style.setProperty('--fly-start-y', `${currentY}px`);
+                    cardEl.style.setProperty('--fly-start-rotate', `${currentRotate}deg`);
+
+                    // Aplicar animación de vuelo
+                    cardEl.classList.add('flying');
+                    cardEl.classList.remove('lifted', 'selected');
+
+                    // Esperar a que termine la animación (0.5s) antes de verificar respuesta
+                    setTimeout(() => {
+                        checkAnswer(false);
+                    }, 500);
+                } else {
+                    // Si no se pudo obtener el transform, ejecutar directamente
+                    cardEl.classList.add('selected');
+                    cardEl.classList.remove('lifted');
+                    checkAnswer(false);
+                }
             }
 
             // --- MANEJADORES DE EVENTOS ---
@@ -1297,8 +1340,8 @@
             // Reactivar cartas del abanico y limpiar estados
             const fanCards = fanContainerEl.querySelectorAll('.fan-card');
             fanCards.forEach(card => {
-                // Remover clases de estado
-                card.classList.remove('lifted', 'selected');
+                // Remover clases de estado (lifted, selected, flying)
+                card.classList.remove('lifted', 'selected', 'flying');
 
                 // Restaurar posición original
                 const baseX = parseFloat(card.dataset.baseX);
@@ -1308,6 +1351,9 @@
                 if (!isNaN(baseX) && !isNaN(baseY) && !isNaN(angle)) {
                     card.style.transform = `translateX(${baseX}px) translateY(${baseY}px) rotate(${angle}deg)`;
                 }
+
+                // Restaurar opacidad (la animación flying pone opacity: 0)
+                card.style.opacity = '1';
 
                 // Reactivar interacción
                 card.style.pointerEvents = 'auto';
@@ -1432,12 +1478,12 @@
                 // Actualizar Scoreboard
                 updateScoreboard();
 
-                // Auto-retry después de 4 segundos
-                console.log('🔁 Auto-retry programado para 4 segundos...');
+                // Auto-retry después de 3 segundos (más dinámico)
+                console.log('🔁 Auto-retry programado para 3 segundos...');
                 setTimeout(() => {
                     console.log('🔁 Ejecutando auto-retry por timeout');
                     startPractice();
-                }, 4000);
+                }, 3000);
 
                 return; // Salir para no ejecutar el código de abajo
             }
